@@ -26,6 +26,11 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Copy Cat | The Purr-fect Print</title>
     <link href="assets/css/style.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Set the worker for PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
 </head>
 
 <body class="bg-orange-50 min-h-screen font-sans text-gray-800 flex flex-col">
@@ -45,7 +50,7 @@ try {
 
     <main class="flex-grow container mx-auto px-6 py-12">
         <div class="flex flex-col lg:flex-row gap-12 items-center lg:items-start justify-center">
-            
+
             <!-- Left Side: Hero and Upload -->
             <div class="w-full lg:w-2/3 text-center lg:text-left">
                 <h1 class="text-5xl md:text-6xl font-black text-gray-900 mb-6 leading-tight">
@@ -54,12 +59,14 @@ try {
                 </h1>
 
                 <p class="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl">
-                    Upload your document, get your <strong>Precision Smart-Price</strong>, and schedule your meet-up or pick-up.
+                    Upload your document, get your <strong>Precision Smart-Price</strong>, and schedule your meet-up or
+                    pick-up.
                     No hidden fees!
                 </p>
 
 
-                <div class="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl border border-orange-100 mx-auto lg:mx-0">
+                <div
+                    class="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl border border-orange-100 mx-auto lg:mx-0">
                     <div id="dropzone"
                         class="border-4 border-dashed border-brand-light rounded-2xl p-10 bg-orange-50/50 hover:bg-orange-50 transition duration-300 cursor-pointer flex flex-col items-center justify-center group">
 
@@ -73,7 +80,8 @@ try {
                         <input id="file-upload" type="file" accept=".pdf" class="hidden" />
                     </div>
 
-                    <div class="mt-6 flex items-center justify-center lg:justify-start gap-4 text-sm text-gray-400 font-medium">
+                    <div
+                        class="mt-6 flex items-center justify-center lg:justify-start gap-4 text-sm text-gray-400 font-medium">
                         <span class="flex items-center gap-1">Secure Upload</span>
                         <span>•</span>
                         <span class="flex items-center gap-1">Instant Pricing</span>
@@ -87,7 +95,7 @@ try {
                     <h2 class="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
                         Meow-nimum Charge
                     </h2>
-                    
+
                     <div class="space-y-6">
                         <!-- Black & White -->
                         <div>
@@ -97,10 +105,13 @@ try {
                                     <p class="text-xs text-gray-400 italic">No prices available.</p>
                                 <?php else: ?>
                                     <?php foreach ($prices as $row): ?>
-                                    <div class="flex justify-between items-center pb-2 border-b border-orange-50 last:border-0">
-                                        <span class="text-gray-600 font-medium"><?= htmlspecialchars($row['paper_size']) ?></span>
-                                        <span class="text-gray-900 font-bold">₱<?= number_format((float)$row['bw_price'], 2) ?></span>
-                                    </div>
+                                        <div
+                                            class="flex justify-between items-center pb-2 border-b border-orange-50 last:border-0">
+                                            <span
+                                                class="text-gray-600 font-medium"><?= htmlspecialchars($row['paper_size']) ?></span>
+                                            <span
+                                                class="text-gray-900 font-bold">₱<?= number_format((float) $row['bw_price'], 2) ?></span>
+                                        </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
@@ -114,10 +125,13 @@ try {
                                     <p class="text-xs text-gray-400 italic">No prices available.</p>
                                 <?php else: ?>
                                     <?php foreach ($prices as $row): ?>
-                                    <div class="flex justify-between items-center pb-2 border-b border-orange-50 last:border-0">
-                                        <span class="text-gray-600 font-medium"><?= htmlspecialchars($row['paper_size']) ?></span>
-                                        <span class="text-gray-900 font-bold">₱<?= number_format((float)$row['colored_price'], 2) ?></span>
-                                    </div>
+                                        <div
+                                            class="flex justify-between items-center pb-2 border-b border-orange-50 last:border-0">
+                                            <span
+                                                class="text-gray-600 font-medium"><?= htmlspecialchars($row['paper_size']) ?></span>
+                                            <span
+                                                class="text-gray-900 font-bold">₱<?= number_format((float) $row['colored_price'], 2) ?></span>
+                                        </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
@@ -127,7 +141,8 @@ try {
 
                     <div class="mt-8 p-4 bg-orange-50 rounded-xl">
                         <p class="text-xs text-orange-700 leading-relaxed font-medium">
-                            * Prices are per page. Bulk discounts apply for orders over 50 pages. Instant pricing will calculate exact ink usage.
+                            * Prices are per page. Bulk discounts apply for orders over 50 pages. Instant pricing will
+                            calculate exact ink usage.
                         </p>
                     </div>
                 </div>
@@ -138,112 +153,208 @@ try {
 
     <footer class="text-center py-8 text-gray-400 text-sm">
         <p>&copy; 2026 Copy Cat Printing. Built in Puerto Princesa.</p>
-    </footer>
-
-    <!-- Modal Backdrop -->
+    </foo    <!-- Modal Backdrop -->
     <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 p-6">
-        <!-- Modal Card -->
-        <div id="modal-card" class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
-            <!-- Progress State -->
-            <div id="modal-loading" class="p-12 text-center">
-                <div class="relative w-24 h-24 mx-auto mb-6">
-                    <div class="absolute inset-0 border-4 border-orange-100 rounded-full opacity-50"></div>
-                    <div class="absolute inset-0 border-4 border-brand rounded-full border-t-transparent animate-spin"></div>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-4xl animate-bounce">🔍</span>
+        
+        <!-- STEP 1: LOADING CARD (Small) -->
+        <div id="card-loading" class="step-card bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300 p-12 text-center">
+            <div class="relative w-24 h-24 mx-auto mb-6">
+                <div class="absolute inset-0 border-4 border-orange-100 rounded-full opacity-50"></div>
+                <div class="absolute inset-0 border-4 border-brand rounded-full border-t-transparent animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-4xl animate-bounce">🔍</span>
+                </div>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900 mb-2 tracking-tight">Scanning...</h3>
+            <p class="text-gray-500">Checking ink coverage and paper size.</p>
+        </div>
+
+        <!-- STEP 2: RESULT CARD (Wide / Two-Column) -->
+        <div id="card-result" class="step-card bg-white w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300">
+            <div class="h-2 bg-brand"></div>
+            <div class="flex flex-col md:flex-row min-h-[500px]">
+                <!-- Left Sidebar (Summary) -->
+                <div class="w-full md:w-80 p-8 border-r border-gray-100 flex flex-col justify-between bg-slate-50/50">
+                    <div>
+                        <div class="mb-8">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-brand/10 rounded-xl text-brand text-2xl mb-4">
+                                💰
+                            </div>
+                            <h3 class="text-2xl font-black text-gray-900 tracking-tight">Smart-Price</h3>
+                            <p class="text-gray-400 text-sm">Real-time calculation.</p>
+                        </div>
+
+                        <div class="space-y-4 mb-8">
+                            <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                                <span class="block text-xs font-bold text-gray-400 uppercase mb-1">Total Pages</span>
+                                <span id="res-pages" class="text-gray-900 font-black text-3xl tracking-tight">0</span>
+                            </div>
+                            <div class="p-5 bg-brand text-white rounded-2xl shadow-lg shadow-brand/20">
+                                <span class="block text-xs font-bold opacity-80 uppercase mb-1">Final Total</span>
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-lg font-bold">₱</span>
+                                    <span id="res-price" class="font-black text-4xl tracking-tight">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button onclick="switchStep('delivery')" class="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-lg hover:bg-gray-800 transition transform active:scale-95 shadow-xl">
+                            Continue
+                        </button>
+                        <button onclick="closeModal()" class="w-full py-2 text-gray-400 font-bold hover:text-gray-600 transition">
+                            Cancel
+                        </button>
                     </div>
                 </div>
-                <h3 class="text-2xl font-black text-gray-900 mb-2 tracking-tight">Scanning...</h3>
-                <p class="text-gray-500">Checking ink coverage and paper size.</p>
-            </div>
 
-            <!-- Result State -->
-            <div id="modal-result" class="hidden">
-                <div class="h-2 bg-brand"></div>
-                <div class="p-8">
-                    <div class="text-center mb-6">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-brand/10 rounded-full text-brand text-3xl mb-4">
-                            📄
-                        </div>
-                        <h3 class="text-2xl font-black text-gray-900 tracking-tight">Scan Complete!</h3>
+                <!-- Right Column (Page Breakdown) -->
+                <div class="flex-grow p-8 bg-white">
+                    <div class="flex items-center justify-between mb-6">
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">Page Breakdown</label>
+                        <span class="text-[10px] bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-bold">LIVE PREVIEW</span>
                     </div>
-
-                    <div class="space-y-4 mb-8">
-                        <div class="flex justify-between items-center p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                            <span class="text-gray-600 font-medium">Total Pages</span>
-                            <span id="res-pages" class="text-gray-900 font-black text-xl">0</span>
-                        </div>
-                        <div class="flex justify-between items-center p-4 bg-brand text-white rounded-2xl shadow-lg shadow-brand/20">
-                            <span class="font-medium opacity-90">Total Price</span>
-                            <span id="res-price" class="font-black text-2xl">₱0.00</span>
-                        </div>
+                    <div id="pdf-viewer-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto p-4 bg-gray-50 rounded-3xl border border-gray-100 shadow-inner">
+                        <!-- Thumbnails will be injected here -->
                     </div>
-
-                    <!-- Meet-up / Pick-up Choice -->
-                    <div class="mb-8">
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-4">How do you want it?</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="cursor-pointer group">
-                                <input type="radio" name="delivery" value="pickup" class="hidden peer" checked>
-                                <div class="p-4 border-2 border-gray-100 rounded-2xl text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all">
-                                    <span class="block text-2xl mb-1">🏪</span>
-                                    <span class="block font-bold text-gray-900">Pick-up</span>
-                                </div>
-                            </label>
-                            <label class="cursor-pointer group">
-                                <input type="radio" name="delivery" value="meetup" class="hidden peer">
-                                <div class="p-4 border-2 border-gray-100 rounded-2xl text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all">
-                                    <span class="block text-2xl mb-1">📍</span>
-                                    <span class="block font-bold text-gray-900">Meet-up</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <button id="confirm-order" class="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-lg hover:bg-gray-800 transition transform active:scale-95 shadow-xl mb-3">
-                        Confirm Order
-                    </button>
-                    <button onclick="closeModal()" class="w-full py-2 text-gray-400 font-bold hover:text-gray-600 transition">
-                        Cancel
-                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- STEP 3: SCHEDULE & NOTES CARD -->
+        <div id="card-schedule" class="step-card bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300">
+            <div class="h-2 bg-brand"></div>
+            <div class="p-10">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-orange-50 rounded-2xl text-orange-500 text-3xl mb-4">
+                        📅
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-900 tracking-tight">Schedule Your Print</h3>
+                    <p class="text-gray-500 text-sm mt-1">When would you like to get your copies?</p>
+                </div>
+
+                <div class="space-y-6 mb-10">
+                    <div>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Preferred Date & Time</label>
+                        <input type="datetime-local" id="inp-schedule" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-all font-bold text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Special Instructions</label>
+                        <textarea id="inp-notes" rows="3" placeholder="e.g. Please bind them together..." class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-brand focus:border-brand outline-none transition-all text-sm"></textarea>
+                    </div>
+                </div>
+
+                <button onclick="switchStep('delivery')" class="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-lg hover:bg-gray-800 transition transform active:scale-95 shadow-xl mb-4">
+                    Next: Delivery Method
+                </button>
+                <button onclick="switchStep('result')" class="w-full py-2 text-gray-400 font-bold hover:text-gray-600 transition">
+                    Go Back
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 4: DELIVERY CARD (Medium) -->
+        <div id="card-delivery" class="step-card bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300">
+            <div class="h-2 bg-brand"></div>
+            <div class="p-10">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-2xl text-blue-500 text-3xl mb-4">
+                        🚚
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-900 tracking-tight">Delivery Method</h3>
+                    <p class="text-gray-500 text-sm mt-1">Select your preferred pick-up point.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-10">
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="delivery" value="pickup" class="hidden peer" checked>
+                        <div class="p-8 border-2 border-gray-100 rounded-[2rem] text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all">
+                            <span class="block text-4xl mb-3">🏪</span>
+                            <span class="block font-bold text-gray-900">Pick-up</span>
+                            <span class="block text-[10px] text-gray-400 mt-1 uppercase">At the shop</span>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer group">
+                        <input type="radio" name="delivery" value="meetup" class="hidden peer">
+                        <div class="p-8 border-2 border-gray-100 rounded-[2rem] text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all">
+                            <span class="block text-4xl mb-3">📍</span>
+                            <span class="block font-bold text-gray-900">Meet-up</span>
+                            <span class="block text-[10px] text-gray-400 mt-1 uppercase">City Center</span>
+                        </div>
+                    </label>
+                </div>
+
+                <button id="confirm-order" onclick="saveOrder()" class="w-full py-5 bg-brand text-white rounded-2xl font-black text-xl hover:bg-brand-dark transition transform active:scale-95 shadow-xl shadow-brand/20 mb-4">
+                    Confirm Order
+                </button>
+                <button onclick="switchStep('schedule')" class="w-full py-2 text-gray-400 font-bold hover:text-gray-600 transition">
+                    Go Back
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <script>
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('file-upload');
         const backdrop = document.getElementById('modal-backdrop');
-        const card = document.getElementById('modal-card');
-        const loading = document.getElementById('modal-loading');
-        const result = document.getElementById('modal-result');
+        
+        const cards = {
+            loading: document.getElementById('card-loading'),
+            result: document.getElementById('card-result'),
+            schedule: document.getElementById('card-schedule'),
+            delivery: document.getElementById('card-delivery')
+        };
+
+
+        let scanData = null;
+        let scanFinished = false;
 
         function openModal() {
             backdrop.classList.remove('hidden');
+            switchStep('loading');
             setTimeout(() => {
                 backdrop.classList.add('opacity-100');
-                card.classList.remove('scale-95');
-                card.classList.add('scale-100');
             }, 10);
+        }
+
+        function switchStep(stepName) {
+            // Hide all cards
+            Object.values(cards).forEach(card => {
+                card.classList.add('hidden');
+                card.classList.add('scale-95');
+                card.classList.remove('scale-100');
+            });
+            
+            // Show active card
+            const activeCard = cards[stepName];
+            activeCard.classList.remove('hidden');
+            setTimeout(() => {
+                activeCard.classList.remove('scale-95');
+                activeCard.classList.add('scale-100');
+            }, 50);
         }
 
         function closeModal() {
             backdrop.classList.remove('opacity-100');
-            card.classList.remove('scale-100');
-            card.classList.add('scale-95');
+            Object.values(cards).forEach(card => {
+                card.classList.remove('scale-100');
+                card.classList.add('scale-95');
+            });
+            
             setTimeout(() => {
                 backdrop.classList.add('hidden');
-                loading.classList.remove('hidden');
-                result.classList.add('hidden');
-                fileInput.value = ''; // Reset file input
+                fileInput.value = '';
+                scanData = null;
+                scanFinished = false;
             }, 300);
         }
 
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleUpload(e.target.files[0]);
-            }
+
+            if (e.target.files.length > 0) handleUpload(e.target.files[0]);
         });
 
         ['dragenter', 'dragover'].forEach(eventName => {
@@ -269,12 +380,79 @@ try {
                 return;
             }
 
-            openModal();
-
-            const formData = new FormData();
-            formData.append('pdf_file', file);
+            openModal(); // Show your scanning animation
 
             try {
+                // 1. Read the PDF directly in the user's browser
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                let pagesData = [];
+                let totalBlackCoverage = 0;
+                let totalColorCoverage = 0;
+
+                // Create an invisible canvas to analyze the pixels
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+                // 2. Loop through every page
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+
+                    // Render at a low resolution (scale 0.5) to keep it lightning fast
+                    const viewport = page.getViewport({ scale: 0.5 });
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    // Determine Paper Size based on standard points
+                    const longestSide = Math.max(page.view[2], page.view[3]);
+                    let paperSize = 'Short';
+                    if (longestSide >= 950) paperSize = 'Long';
+                    else if (longestSide >= 820) paperSize = 'A4';
+
+                    // Paint the page to the hidden canvas
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                    // Extract the raw pixels
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    let pixelCount = canvas.width * canvas.height;
+
+                    let c = 0, m = 0, y = 0, k = 0;
+
+                    // Analyze every pixel for CMYK ink values
+                    for (let i = 0; i < imgData.length; i += 4) {
+                        let r = imgData[i] / 255;
+                        let g = imgData[i + 1] / 255;
+                        let b = imgData[i + 2] / 255;
+
+                        let pixelK = 1 - Math.max(r, g, b);
+                        let pixelC = (1 - r - pixelK) / (1 - pixelK + 0.0001);
+                        let pixelM = (1 - g - pixelK) / (1 - pixelK + 0.0001);
+                        let pixelY = (1 - b - pixelK) / (1 - pixelK + 0.0001);
+
+                        k += pixelK;
+                        c += Math.max(0, pixelC);
+                        m += Math.max(0, pixelM);
+                        y += Math.max(0, pixelY);
+                    }
+
+                    // Calculate percentage coverage for this page
+                    let pageBlackPct = (k / pixelCount) * 100;
+                    let pageColorPct = ((c + m + y) / (3 * pixelCount)) * 100;
+
+                    pagesData.push({
+                        page: pageNum,
+                        size: paperSize,
+                        black_pct: pageBlackPct.toFixed(2),
+                        color_pct: pageColorPct.toFixed(2)
+                    });
+                }
+
+                // 3. Send the calculated coverage + the PDF file to your Hostinger server
+                const formData = new FormData();
+                formData.append('pdf_file', file);
+                formData.append('scan_data', JSON.stringify(pagesData)); // Send the math!
+
                 const response = await fetch('includes/process_upload.php', {
                     method: 'POST',
                     body: formData
@@ -282,21 +460,115 @@ try {
 
                 const data = await response.json();
 
-                if (data.status === 'success' || data.document_summary) {
-                    const summary = data.document_summary;
-                    document.getElementById('res-pages').textContent = summary.total_pages;
-                    document.getElementById('res-price').textContent = '₱' + parseFloat(summary.total_retail_price).toFixed(2);
-                    
-                    loading.classList.add('hidden');
-                    result.classList.remove('hidden');
+                if (data.status === 'success') {
+                    // Populate global scanData variable so saveOrder() works
+                    scanData = {
+                        original_name: file.name,
+                        temp_file_path: data.file_path,
+                        pages: data.pages, // The array of page prices
+                        document_summary: {
+                            total_pages: data.total_pages,
+                            total_retail_price: data.total_price
+                        }
+                    };
+
+                    document.getElementById('res-pages').textContent = data.total_pages;
+                    document.getElementById('res-price').textContent = '₱' + parseFloat(data.total_price).toFixed(2);
+
+                    // Trigger the visual thumbnail renderer
+                    await renderViewer(pdf, data.pages);
+
+                    switchStep('result');
                 } else {
-                    alert('Error: ' + (data.message || 'Failed to scan document.'));
+                    alert('Error: ' + data.message);
                     closeModal();
                 }
+
             } catch (error) {
-                console.error('Upload failed:', error);
-                alert('Connection error. Please try again.');
+                console.error('Scanning failed:', error);
+                alert('Could not scan the document. It might be password protected.');
                 closeModal();
+            }
+        }
+
+        async function renderViewer(pdf, pagesData) {
+            const viewer = document.getElementById('pdf-viewer-grid');
+            viewer.innerHTML = ''; // Clear out any previous scans
+
+            for (let i = 0; i < pagesData.length; i++) {
+                const pageInfo = pagesData[i];
+                const pageNum = pageInfo.page;
+
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 0.25 }); // Low scale for tiny thumbnails
+
+                // Create the canvas for the PDF page
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                canvas.className = 'w-full h-auto object-cover rounded shadow-sm border border-gray-200 bg-white';
+
+                // Paint the PDF page onto the canvas
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                // Create the wrapper and the price tag badge
+                const container = document.createElement('div');
+                container.className = 'relative flex flex-col items-center group cursor-help';
+                container.title = `Page ${pageNum} - ${pageInfo.size}`;
+
+                const priceBadge = document.createElement('div');
+                priceBadge.className = 'absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 scale-90 group-hover:scale-110 transition-transform';
+                priceBadge.textContent = '₱' + parseFloat(pageInfo.price).toFixed(2);
+
+                const pageLabel = document.createElement('span');
+                pageLabel.className = 'text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-wider';
+                pageLabel.textContent = `Pg ${pageNum}`;
+
+                container.appendChild(canvas);
+                container.appendChild(priceBadge);
+                container.appendChild(pageLabel);
+                viewer.appendChild(container);
+            }
+        }
+
+        async function saveOrder() {
+            if (!scanData) return;
+
+            const delivery = document.querySelector('input[name="delivery"]:checked').value;
+            const scheduledTime = document.getElementById('inp-schedule').value;
+            const notes = document.getElementById('inp-notes').value;
+
+            const finalData = {
+                filename: scanData.original_name,
+                file_path: scanData.temp_file_path,
+                paper_size: scanData.pages[0].size, // Primary size
+                is_duplex: 0, // Hardcoded for now as per user request to remove duplex
+                total_pages: scanData.document_summary.total_pages,
+                price: scanData.document_summary.total_retail_price,
+                ink_data: JSON.stringify(scanData.pages),
+                delivery: delivery,
+                scheduled_time: scheduledTime,
+                notes: notes
+            };
+
+
+            try {
+                const response = await fetch('includes/finalize_order.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(finalData)
+                });
+
+                const res = await response.json();
+                if (res.status === 'success') {
+                    alert('Order confirmed! We will contact you shortly.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + res.message);
+                }
+            } catch (e) {
+                alert('Failed to save order.');
             }
         }
     </script>
