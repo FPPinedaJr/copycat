@@ -573,7 +573,14 @@ try {
 
                     const data = await response.json();
 
+                    // --- PRICING ALGO DEBUG ---
+                    console.log('%c CAT-ALYSIS PRICING DEBUG ', 'background: #f97316; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;');
+                    console.table(data.debug.base_costs);
+                    console.log('Page-by-page Breakdown:');
+                    console.table(data.debug.pages);
+
                     if (data.status === 'success') {
+
                         // Populate global scanData variable so saveOrder() works
                         scanData = {
                             original_name: file.name,
@@ -598,8 +605,13 @@ try {
                     }
 
                 } catch (error) {
-                    console.error('Scanning failed:', error);
-                    alert('Could not scan the document. It might be password protected.');
+                    console.error('FULL SCAN ERROR:', error);
+
+                    alert(
+                        'Scan failed:\n' +
+                        (error?.message || error?.toString() || 'Unknown error')
+                    );
+
                     closeModal();
                 }
             }
