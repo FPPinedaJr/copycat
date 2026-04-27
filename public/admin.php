@@ -70,7 +70,7 @@ try {
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <span class="text-slate-400 text-xs font-black uppercase tracking-widest block mb-2">Today's Revenue</span>
                 <div class="flex items-baseline gap-2">
-                    <span class="text-3xl font-black text-slate-900">₱<?= number_format(array_sum(array_column($orders, 'price')), 2) ?></span>
+                    <span class="text-3xl font-black text-slate-900"><?= number_format(array_sum(array_column($orders, 'price')), 2) ?></span>
                 </div>
             </div>
         </div>
@@ -140,7 +140,7 @@ try {
                                 </span>
                             </td>
                             <td class="px-8 py-6 text-right">
-                                <div class="text-lg font-black text-slate-900">₱<?= number_format($order['price'], 2) ?></div>
+                                <div class="text-lg font-black text-slate-900"><?= number_format($order['price'], 2) ?></div>
                             </td>
                             <td class="px-8 py-6">
                                 <a href="<?= htmlspecialchars($order['file_path']) ?>" download class="inline-flex items-center justify-center w-10 h-10 bg-slate-100 rounded-xl text-slate-600 hover:bg-brand hover:text-white transition shadow-sm">

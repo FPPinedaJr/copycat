@@ -130,7 +130,7 @@ try {
                                             <span
                                                 class="text-gray-600 font-medium"><?= htmlspecialchars($row['paper_size']) ?></span>
                                             <span
-                                                class="text-gray-900 font-bold">₱<?= number_format((float) $row['bw_price'], 2) ?></span>
+                                                class="text-gray-900 font-bold"><?= number_format((float) $row['bw_price'], 2) ?></span>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -150,7 +150,7 @@ try {
                                             <span
                                                 class="text-gray-600 font-medium"><?= htmlspecialchars($row['paper_size']) ?></span>
                                             <span
-                                                class="text-gray-900 font-bold">₱<?= number_format((float) $row['colored_price'], 2) ?></span>
+                                                class="text-gray-900 font-bold"><?= number_format((float) $row['colored_price'], 2) ?></span>
                                         </div>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -234,7 +234,6 @@ try {
                                         class="block text-[11px] font-bold text-orange-100 uppercase tracking-widest mb-1.5">Final
                                         Total</span>
                                     <div class="flex items-baseline gap-1 relative z-10">
-                                        <span class="text-2xl font-medium text-orange-200">₱</span>
                                         <span id="res-price" class="font-black text-5xl tracking-tighter">0.00</span>
                                     </div>
                                 </div>
@@ -408,6 +407,8 @@ try {
         </div>
 
         <script>
+            const DEBUG_MODE = true; // Set to true to enable CSV export of pricing logic
+
             const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-upload');
             const backdrop = document.getElementById('modal-backdrop');
@@ -419,6 +420,39 @@ try {
                 delivery: document.getElementById('card-delivery'),
                 success: document.getElementById('card-success')
             };
+
+            /**
+             * Exports an array of objects to a CSV file and triggers download
+             */
+            function downloadCSV(data, filename = 'debug_export.csv') {
+                if (!data || !data.length) return;
+
+                // Extract headers from the first object
+                const headers = Object.keys(data[0]).join(',');
+
+                // Convert each object to a CSV row
+                const rows = data.map(row =>
+                    Object.values(row).map(value => {
+                        // Escape quotes and wrap in quotes to handle commas within values
+                        const str = String(value).replace(/"/g, '""');
+                        return `"${str}"`;
+                    }).join(',')
+                );
+
+                const csvContent = [headers, ...rows].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+
+                if (link.download !== undefined) {
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', filename);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }
 
 
 
@@ -577,10 +611,15 @@ try {
                     const data = await response.json();
 
                     // --- PRICING ALGO DEBUG ---
-                    console.log('%c CAT-ALYSIS PRICING DEBUG ', 'background: #f97316; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;');
-                    console.table(data.debug.base_costs);
-                    console.log('Page-by-page Breakdown:');
-                    console.table(data.debug.pages);
+                    if (typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) {
+                        console.log('%c CAT-ALYSIS DEBUG: Exporting to CSV... ', 'background: #f97316; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;');
+                        if (data.debug && data.debug.pages) {
+                            downloadCSV(data.debug.pages, `pricing_breakdown_${file.name.replace('.pdf', '')}.csv`);
+                        }
+                    } else {
+                        console.log('%c CAT-ALYSIS PRICING DEBUG ', 'background: #f97316; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;');
+                        console.table(data.debug.pages);
+                    }
 
                     if (data.status === 'success') {
 
@@ -596,7 +635,7 @@ try {
                         };
 
                         document.getElementById('res-pages').textContent = data.total_pages;
-                        document.getElementById('res-price').textContent = '₱' + parseFloat(data.total_price).toFixed(2);
+                        document.getElementById('res-price').textContent = parseFloat(data.total_price).toFixed(2);
 
                         // Trigger the visual thumbnail renderer
                         await renderViewer(pdf, data.pages);
@@ -647,7 +686,7 @@ try {
 
                     const priceBadge = document.createElement('div');
                     priceBadge.className = 'absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 scale-90 group-hover:scale-110 transition-transform';
-                    priceBadge.textContent = '₱' + parseFloat(pageInfo.price).toFixed(2);
+                    priceBadge.textContent = parseFloat(pageInfo.price).toFixed(2);
 
                     const pageLabel = document.createElement('span');
                     pageLabel.className = 'text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-wider';

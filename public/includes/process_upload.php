@@ -1,6 +1,6 @@
 <?php
 /**
- * REFACTORED PROCESS UPLOAD (STANDARD-BASE THRESHOLD MODEL)
+ * REFACTORED PROCESS UPLOAD (DYNAMIC BASE & TIER THRESHOLD MODEL)
  */
 
 require_once __DIR__ . '/connect_db.php';
@@ -14,26 +14,76 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['pdf_file']) || !iss
 $scanData = json_decode($_POST['scan_data'], true);
 $totalPages = count($scanData);
 
-// 1. Load the specific Price Matrix (Based on your DB)
-$priceMatrix = [
-    'Short' => ['bw' => 1.00, 'color' => 2.00],
-    'A4' => ['bw' => 1.00, 'color' => 2.00],
-    'Long' => ['bw' => 1.50, 'color' => 3.00]
-];
+// 1. Load the Base Price Matrix & Dynamic Tiers
+$priceMatrix = [];
+$tiersMatrix = [];
 
-// 2. Define the Absolute Clustering Tiers (Where ~6% is the 100% Baseline)
-function getTierPricing($coverage)
+try {
+    // --- A. Fetch Base Prices ---
+    $stmtPrices = $pdo->query("SELECT paper_size, bw_price, colored_price FROM printing_prices");
+    $prices = $stmtPrices->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($prices) {
+        foreach ($prices as $row) {
+            $priceMatrix[$row['paper_size']] = [
+                'bw' => (float) $row['bw_price'],
+                'color' => (float) $row['colored_price']
+            ];
+        }
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Printing prices table is empty.']);
+        exit;
+    }
+
+    // --- B. Fetch Dynamic Tiers ---
+    // IMPORTANT: We ORDER BY min_coverage DESC so our evaluation function reads from highest to lowest threshold
+    $stmtTiers = $pdo->query("SELECT paper_size, color_mode, tier_name, min_coverage, surcharge 
+                              FROM printing_tiers 
+                              ORDER BY paper_size, color_mode, min_coverage DESC");
+    $tiers = $stmtTiers->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($tiers) {
+        foreach ($tiers as $row) {
+            $size = $row['paper_size'];
+            $mode = $row['color_mode']; // Expected: 'BW' or 'Color'
+
+            $tiersMatrix[$size][$mode][] = [
+                'tier' => $row['tier_name'],
+                'min_coverage' => (float) $row['min_coverage'],
+                'surcharge' => (float) $row['surcharge']
+            ];
+        }
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Pricing tiers table is empty.']);
+        exit;
+    }
+
+} catch (PDOException $e) {
+    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+    exit;
+}
+
+// 2. The Dynamic Tier Evaluation Function
+function getDynamicTierPricing($coverage, $size, $isColor, $tiersMatrix)
 {
-    // Surcharge is the exact Peso amount ADDED to or SUBTRACTED from the Base Price
-    if ($coverage >= 20.0)
-        return ['tier' => '1 Premium (Heavy)', 'surcharge' => 2.00];  // Add ₱2.00
-    if ($coverage >= 10.0)
-        return ['tier' => '2 Premium (Dense)', 'surcharge' => 1.00];  // Add ₱1.00
-    if ($coverage >= 4.5)
-        return ['tier' => '3 Standard (Text)', 'surcharge' => 0.00];  // Base Price
-    if ($coverage >= 1.5)
-        return ['tier' => '4 Light (Sparse)', 'surcharge' => -0.25]; // Discount ₱0.25
-    return ['tier' => '5 Minimal', 'surcharge' => -0.50]; // Discount ₱0.50
+    $mode = $isColor ? 'Color' : 'BW';
+
+    // Ensure we have loaded tiers for this specific paper size and mode combination
+    if (isset($tiersMatrix[$size][$mode])) {
+        // Because our SQL query ordered by min_coverage DESC, we can just loop 
+        // and return the first one where coverage >= min_coverage
+        foreach ($tiersMatrix[$size][$mode] as $tierDef) {
+            if ($coverage >= $tierDef['min_coverage']) {
+                return [
+                    'tier' => $tierDef['tier'],
+                    'surcharge' => $tierDef['surcharge']
+                ];
+            }
+        }
+    }
+
+    // Absolute fallback just in case a scanned coverage somehow falls below the lowest configured threshold
+    return ['tier' => 'Default (No Match)', 'surcharge' => 0.00];
 }
 
 $debug = ['pages' => []];
@@ -47,12 +97,17 @@ foreach ($scanData as $page) {
     $colorCov = (float) $page['color_pct'];
     $totalCoverage = $kCov + $colorCov;
 
+    // Safety fallback if paper size isn't mapped
+    if (!isset($priceMatrix[$size])) {
+        $size = 'Short';
+    }
+
     // A. Strict Color Logic
     $isColor = $colorCov > 0;
     $basePrice = $isColor ? $priceMatrix[$size]['color'] : $priceMatrix[$size]['bw'];
 
-    // B. Get Tier and Flat Surcharge
-    $cluster = getTierPricing($totalCoverage);
+    // B. Get Tier and Flat Surcharge Dynamically!
+    $cluster = getDynamicTierPricing($totalCoverage, $size, $isColor, $tiersMatrix);
 
     // C. Calculate Final Retail Price (Base + Surcharge)
     $retailPrice = $basePrice + $cluster['surcharge'];
@@ -71,10 +126,10 @@ foreach ($scanData as $page) {
         'mode' => $isColor ? 'Color' : 'B&W',
         'k_coverage' => number_format($kCov, 4) . '%',
         'color_coverage' => number_format($colorCov, 4) . '%',
-        'base_price' => '₱' . number_format($basePrice, 2),
+        'base_price' => number_format($basePrice, 2),
         'cluster_tier' => $cluster['tier'],
-        'surcharge' => ($cluster['surcharge'] > 0 ? '+' : '') . '₱' . number_format($cluster['surcharge'], 2),
-        'retail_price' => '₱' . number_format($retailPrice, 2)
+        'surcharge' => ($cluster['surcharge'] > 0 ? '+' : '') . number_format($cluster['surcharge'], 2),
+        'retail_price' => number_format($retailPrice, 2)
     ];
 
     $pageBreakdown[] = [
