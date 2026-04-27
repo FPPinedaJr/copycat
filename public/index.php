@@ -512,7 +512,7 @@ try {
                     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                         const page = await pdf.getPage(pageNum);
 
-                        // Render at a low resolution (scale 0.5) to keep it lightning fast
+                        // Scale 0.5 is a great balance between speed and pixel accuracy
                         const viewport = page.getViewport({ scale: 0.5 });
                         canvas.width = viewport.width;
                         canvas.height = viewport.height;
@@ -523,41 +523,44 @@ try {
                         if (longestSide >= 950) paperSize = 'Long';
                         else if (longestSide >= 820) paperSize = 'A4';
 
-                        // Paint the page to the hidden canvas
                         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-                        // Extract the raw pixels
                         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
                         let pixelCount = canvas.width * canvas.height;
 
-                        let c = 0, m = 0, y = 0, k = 0;
+                        let kWeightSum = 0;
+                        let colorWeightSum = 0;
 
-                        // Analyze every pixel for CMYK ink values
+                        // Analyze every pixel using the "Hybrid Intensity Logic"
                         for (let i = 0; i < imgData.length; i += 4) {
-                            let r = imgData[i] / 255;
-                            let g = imgData[i + 1] / 255;
-                            let b = imgData[i + 2] / 255;
+                            let r = imgData[i];
+                            let g = imgData[i + 1];
+                            let b = imgData[i + 2];
+                            // imgData[i+3] is Alpha, which we ignore assuming a white page background
 
-                            let pixelK = 1 - Math.max(r, g, b);
-                            let pixelC = (1 - r - pixelK) / (1 - pixelK + 0.0001);
-                            let pixelM = (1 - g - pixelK) / (1 - pixelK + 0.0001);
-                            let pixelY = (1 - b - pixelK) / (1 - pixelK + 0.0001);
+                            // A. Skip absolute white (Paper) immediately to save massive CPU cycles
+                            if (r > 245 && g > 245 && b > 245) continue;
 
-                            k += pixelK;
-                            c += Math.max(0, pixelC);
-                            m += Math.max(0, pixelM);
-                            y += Math.max(0, pixelY);
+                            // B. Grayscale vs Color Detection
+                            // A threshold of 15 effectively ignores anti-aliasing artifacts on black text
+                            if (Math.abs(r - g) < 15 && Math.abs(g - b) < 15) {
+                                // It's a Black/Gray pixel. Calculate density (0.0 to 1.0)
+                                kWeightSum += (255 - ((r + g + b) / 3)) / 255;
+                            } else {
+                                // It's a Color pixel. Calculate density (0.0 to 1.0)
+                                colorWeightSum += (255 - ((r + g + b) / 3)) / 255;
+                            }
                         }
 
-                        // Calculate percentage coverage for this page
-                        let pageBlackPct = (k / pixelCount) * 100;
-                        let pageColorPct = ((c + m + y) / (3 * pixelCount)) * 100;
+                        // Calculate the percentage of the page physically covered by solid ink
+                        let pageBlackPct = (kWeightSum / pixelCount) * 100;
+                        let pageColorPct = (colorWeightSum / pixelCount) * 100;
 
                         pagesData.push({
                             page: pageNum,
                             size: paperSize,
-                            black_pct: pageBlackPct.toFixed(2),
-                            color_pct: pageColorPct.toFixed(2)
+                            black_pct: pageBlackPct.toFixed(4), // Keeping 4 decimals for precise backend math
+                            color_pct: pageColorPct.toFixed(4)
                         });
                     }
 
