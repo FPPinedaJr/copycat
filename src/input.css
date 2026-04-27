@@ -1,3 +1,10 @@
 @import "tailwindcss";
 @source "../**/*.php";
 
+@theme {
+  --color-brand-light: #fed7aa;
+  --color-brand: #f97316;
+  --color-brand-dark: #c2410c;
+}
+
+
