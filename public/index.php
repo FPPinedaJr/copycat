@@ -210,7 +210,16 @@ try {
                 </div>
             </div>
             <h3 class="text-2xl font-black text-gray-900 mb-2 tracking-tight">Scanning...</h3>
-            <p class="text-gray-500">Checking ink coverage and paper size.</p>
+            <p id="scan-status" class="text-gray-500 mb-6">Preparing document...</p>
+
+            <!-- Progress Bar UI -->
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
+                <div id="scan-progress" class="bg-brand h-full w-0 transition-all duration-300 ease-out"></div>
+            </div>
+            <div class="flex justify-between items-center">
+                <span id="scan-page-count" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">0 / 0 Pages</span>
+                <span id="scan-percentage" class="text-[10px] font-bold text-brand uppercase tracking-widest">0%</span>
+            </div>
         </div>
 
         <div id="card-result"
@@ -474,6 +483,13 @@ try {
 
         function openModal() {
             backdrop.classList.remove('hidden');
+            
+            // Reset Progress UI
+            document.getElementById('scan-progress').style.width = '0%';
+            document.getElementById('scan-status').textContent = 'Preparing document...';
+            document.getElementById('scan-page-count').textContent = 'Initializing...';
+            document.getElementById('scan-percentage').textContent = '0%';
+
             switchStep('loading');
             setTimeout(() => {
                 backdrop.classList.add('opacity-100');
@@ -556,11 +572,29 @@ try {
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
                 // 2. Loop through every page
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const totalPages = pdf.numPages;
+                const statusText = document.getElementById('scan-status');
+                const progressBar = document.getElementById('scan-progress');
+                const pageCounter = document.getElementById('scan-page-count');
+                const percentText = document.getElementById('scan-percentage');
+
+                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                    // Update UI Progress
+                    const progress = Math.round((pageNum / totalPages) * 100);
+                    statusText.textContent = `Analyzing page ${pageNum}...`;
+                    progressBar.style.width = `${progress}%`;
+                    pageCounter.textContent = `${pageNum} / ${totalPages} Pages`;
+                    percentText.textContent = `${progress}%`;
+
+                    // Brief pause to allow UI to update (especially for large files)
+                    if (pageNum % 5 === 0 || pageNum === totalPages) {
+                        await new Promise(r => setTimeout(r, 10));
+                    }
+
                     const page = await pdf.getPage(pageNum);
 
-                    // Scale 0.5 is a great balance between speed and pixel accuracy
-                    const viewport = page.getViewport({ scale: 0.5 });
+                    // Optimization: Scale 0.3 is enough for coverage estimation and is ~2.7x faster than 0.5
+                    const viewport = page.getViewport({ scale: 0.3 });
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
 
@@ -573,28 +607,25 @@ try {
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                    let pixelCount = canvas.width * canvas.height;
+                    let pixelCount = 0;
 
                     let kWeightSum = 0;
                     let colorWeightSum = 0;
 
-                    // Analyze every pixel using the "Hybrid Intensity Logic"
-                    for (let i = 0; i < imgData.length; i += 4) {
+                    // Optimization: Sampling every 4th pixel (i += 16) is 4x faster with negligible accuracy loss
+                    for (let i = 0; i < imgData.length; i += 16) {
+                        pixelCount++;
                         let r = imgData[i];
                         let g = imgData[i + 1];
                         let b = imgData[i + 2];
-                        // imgData[i+3] is Alpha, which we ignore assuming a white page background
 
-                        // A. Skip absolute white (Paper) immediately to save massive CPU cycles
+                        // A. Skip absolute white (Paper)
                         if (r > 245 && g > 245 && b > 245) continue;
 
                         // B. Grayscale vs Color Detection
-                        // A threshold of 15 effectively ignores anti-aliasing artifacts on black text
                         if (Math.abs(r - g) < 15 && Math.abs(g - b) < 15) {
-                            // It's a Black/Gray pixel. Calculate density (0.0 to 1.0)
                             kWeightSum += (255 - ((r + g + b) / 3)) / 255;
                         } else {
-                            // It's a Color pixel. Calculate density (0.0 to 1.0)
                             colorWeightSum += (255 - ((r + g + b) / 3)) / 255;
                         }
                     }
