@@ -294,6 +294,10 @@ try {
                     </div>
 
                     <div class="space-y-3">
+                        <button id="btn-toggle-breakdown" onclick="toggleBreakdown()"
+                            class="md:hidden w-full py-3 text-brand font-bold text-sm hover:bg-orange-50 rounded-xl transition-colors border border-orange-100 mt-2">
+                            Show Page Breakdown
+                        </button>
                         <button onclick="switchStep('customer')"
                             class="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-[15px] hover:bg-gray-800 transition-all active:scale-[0.98] shadow-md hover:shadow-xl flex justify-center items-center gap-2 group">
                             Continue to Checkout
@@ -310,7 +314,7 @@ try {
                     </div>
                 </div>
 
-                <div class="flex-grow p-8 lg:p-10 bg-white flex flex-col">
+                <div id="breakdown-section" class="flex-grow p-8 lg:p-10 bg-white flex flex-col hidden md:flex">
                     <div class="flex items-center justify-between mb-6">
                         <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Page Breakdown</h4>
                         <div
@@ -320,8 +324,7 @@ try {
                         </div>
                     </div>
 
-                    <div id="pdf-viewer-grid"
-                        class="custom-scrollbar grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                    <div class="pdf-viewer-grid custom-scrollbar grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
                     </div>
                 </div>
             </div>
@@ -484,7 +487,7 @@ try {
 
 
         <div id="card-success"
-            class="step-card bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300 p-12 text-center">
+            class="step-card bg-white w-full max-sm rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300 p-12 text-center">
             <div
                 class="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 animate-bounce">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
@@ -499,6 +502,29 @@ try {
                 class="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black text-lg hover:bg-emerald-600 transition transform active:scale-95 shadow-xl shadow-emerald-200">
                 Back to Home
             </button>
+        </div>
+
+        <!-- Mobile Bottom Sheet for Page Breakdown -->
+        <div id="breakdown-sheet" class="md:hidden fixed inset-0 z-[70] hidden">
+            <div id="breakdown-sheet-backdrop" onclick="toggleBreakdown()"
+                class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] opacity-0 transition-opacity duration-300">
+            </div>
+            <div id="breakdown-sheet-content"
+                class="absolute inset-x-0 bottom-0 bg-white rounded-t-[2.5rem] shadow-2xl p-6 transform translate-y-full transition-transform duration-300 flex flex-col max-h-[90vh]">
+                <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                <div class="flex items-center justify-between mb-6">
+                    <h4 class="text-lg font-black text-gray-900 uppercase tracking-widest">Page Breakdown</h4>
+                    <button onclick="toggleBreakdown()" class="p-2 text-gray-400 hover:text-gray-600 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                            stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div
+                    class="pdf-viewer-grid custom-scrollbar grid grid-cols-2 sm:grid-cols-3 gap-6 overflow-y-auto p-4 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                </div>
+            </div>
         </div>
 
     </div>
@@ -549,6 +575,13 @@ try {
 
         function closeModal() {
             backdrop.classList.remove('opacity-100');
+            
+            // Close bottom sheet if open
+            const sheet = document.getElementById('breakdown-sheet');
+            if (!sheet.classList.contains('hidden')) {
+                toggleBreakdown();
+            }
+
             Object.values(cards).forEach(card => {
                 card.classList.remove('scale-100');
                 card.classList.add('scale-95');
@@ -693,6 +726,13 @@ try {
 
                 // Defaults to color, sets math, and switches view
                 setPrintMode('Color');
+                
+                // Reset breakdown visibility for mobile (ensure bottom sheet is closed)
+                const sheet = document.getElementById('breakdown-sheet');
+                if (!sheet.classList.contains('hidden')) {
+                    toggleBreakdown();
+                }
+
                 switchStep('result');
 
             } catch (error) {
@@ -755,34 +795,37 @@ try {
         }
 
         function renderViewer(pagesData, thumbnails) {
-            const viewer = document.getElementById('pdf-viewer-grid');
-            viewer.innerHTML = '';
+            const viewers = document.querySelectorAll('.pdf-viewer-grid');
+            
+            viewers.forEach(viewer => {
+                viewer.innerHTML = '';
 
-            for (let i = 0; i < pagesData.length; i++) {
-                const pageInfo = pagesData[i];
-                const pageNum = pageInfo.page;
+                for (let i = 0; i < pagesData.length; i++) {
+                    const pageInfo = pagesData[i];
+                    const pageNum = pageInfo.page;
 
-                const img = document.createElement('img');
-                img.src = thumbnails[i];
-                img.className = 'w-full h-auto object-cover rounded shadow-sm border border-gray-200 bg-white';
+                    const img = document.createElement('img');
+                    img.src = thumbnails[i];
+                    img.className = 'w-full h-auto object-cover rounded shadow-sm border border-gray-200 bg-white';
 
-                const container = document.createElement('div');
-                container.className = 'relative flex flex-col items-center group cursor-help';
-                container.title = `Page ${pageNum} - ${pageInfo.size}`;
+                    const container = document.createElement('div');
+                    container.className = 'relative flex flex-col items-center group cursor-help';
+                    container.title = `Page ${pageNum} - ${pageInfo.size}`;
 
-                const priceBadge = document.createElement('div');
-                priceBadge.className = 'absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 scale-90 group-hover:scale-110 transition-transform';
-                priceBadge.textContent = '₱' + parseFloat(pageInfo.price).toFixed(2);
+                    const priceBadge = document.createElement('div');
+                    priceBadge.className = 'absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 scale-90 group-hover:scale-110 transition-transform';
+                    priceBadge.textContent = '₱' + parseFloat(pageInfo.price).toFixed(2);
 
-                const pageLabel = document.createElement('span');
-                pageLabel.className = 'text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-wider';
-                pageLabel.textContent = pageNum;
+                    const pageLabel = document.createElement('span');
+                    pageLabel.className = 'text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-wider';
+                    pageLabel.textContent = pageNum;
 
-                container.appendChild(img);
-                container.appendChild(priceBadge);
-                container.appendChild(pageLabel);
-                viewer.appendChild(container);
-            }
+                    container.appendChild(img);
+                    container.appendChild(priceBadge);
+                    container.appendChild(pageLabel);
+                    viewer.appendChild(container);
+                }
+            });
         }
 
         async function saveOrder() {
@@ -853,6 +896,28 @@ try {
                 btn.classList.remove('opacity-80', 'cursor-not-allowed');
                 btnText.textContent = 'Confirm Order';
                 btnSpinner.classList.add('hidden');
+            }
+        }
+
+        function toggleBreakdown() {
+            const sheet = document.getElementById('breakdown-sheet');
+            const backdrop = document.getElementById('breakdown-sheet-backdrop');
+            const content = document.getElementById('breakdown-sheet-content');
+            
+            if (sheet.classList.contains('hidden')) {
+                sheet.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    backdrop.classList.add('opacity-100');
+                    content.classList.remove('translate-y-full');
+                }, 10);
+            } else {
+                backdrop.classList.remove('opacity-100');
+                backdrop.classList.add('opacity-0');
+                content.classList.add('translate-y-full');
+                setTimeout(() => {
+                    sheet.classList.add('hidden');
+                }, 300);
             }
         }
     </script>
