@@ -1,6 +1,6 @@
 <?php
 /**
- * REFACTORED PROCESS UPLOAD (DYNAMIC BASE & TIER THRESHOLD MODEL)
+ * REFACTORED PROCESS UPLOAD (HYBRID: FIXED B&W + DYNAMIC COLOR TIERS)
  */
 
 require_once __DIR__ . '/connect_db.php';
@@ -14,12 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['pdf_file']) || !iss
 $scanData = json_decode($_POST['scan_data'], true);
 $totalPages = count($scanData);
 
-// 1. Load the Base Price Matrix & Dynamic Tiers
 $priceMatrix = [];
-$tiersMatrix = [];
+$colorTiersMatrix = [];
 
 try {
-    // --- A. Fetch Base Prices ---
+    // 1. Fetch Base Prices
     $stmtPrices = $pdo->query("SELECT paper_size, bw_price, colored_price FROM printing_prices");
     $prices = $stmtPrices->fetchAll(PDO::FETCH_ASSOC);
 
@@ -35,44 +34,34 @@ try {
         exit;
     }
 
-    // --- B. Fetch Dynamic Tiers ---
-    // IMPORTANT: We ORDER BY min_coverage DESC so our evaluation function reads from highest to lowest threshold
-    $stmtTiers = $pdo->query("SELECT paper_size, color_mode, tier_name, min_coverage, surcharge 
+    // 2. Fetch ONLY Color Tiers (Ordered highest to lowest coverage)
+    // We assume your table still has 'min_coverage' and 'surcharge'
+    $stmtTiers = $pdo->query("SELECT paper_size, tier_name, min_coverage, surcharge 
                               FROM printing_tiers 
-                              ORDER BY paper_size, color_mode, min_coverage DESC");
+                              WHERE color_mode = 'Color' 
+                              ORDER BY paper_size, min_coverage DESC");
     $tiers = $stmtTiers->fetchAll(PDO::FETCH_ASSOC);
 
     if ($tiers) {
         foreach ($tiers as $row) {
             $size = $row['paper_size'];
-            $mode = $row['color_mode']; // Expected: 'BW' or 'Color'
-
-            $tiersMatrix[$size][$mode][] = [
+            $colorTiersMatrix[$size][] = [
                 'tier' => $row['tier_name'],
                 'min_coverage' => (float) $row['min_coverage'],
                 'surcharge' => (float) $row['surcharge']
             ];
         }
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Pricing tiers table is empty.']);
-        exit;
     }
-
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
     exit;
 }
 
-// 2. The Dynamic Tier Evaluation Function
-function getDynamicTierPricing($coverage, $size, $isColor, $tiersMatrix)
+// 3. Helper Function: Evaluate Color Coverage against Dynamic Tiers
+function getDynamicColorTier($coverage, $size, $colorTiersMatrix)
 {
-    $mode = $isColor ? 'Color' : 'BW';
-
-    // Ensure we have loaded tiers for this specific paper size and mode combination
-    if (isset($tiersMatrix[$size][$mode])) {
-        // Because our SQL query ordered by min_coverage DESC, we can just loop 
-        // and return the first one where coverage >= min_coverage
-        foreach ($tiersMatrix[$size][$mode] as $tierDef) {
+    if (isset($colorTiersMatrix[$size])) {
+        foreach ($colorTiersMatrix[$size] as $tierDef) {
             if ($coverage >= $tierDef['min_coverage']) {
                 return [
                     'tier' => $tierDef['tier'],
@@ -81,9 +70,8 @@ function getDynamicTierPricing($coverage, $size, $isColor, $tiersMatrix)
             }
         }
     }
-
-    // Absolute fallback just in case a scanned coverage somehow falls below the lowest configured threshold
-    return ['tier' => 'Default (No Match)', 'surcharge' => 0.00];
+    // Fallback if coverage is below the lowest configured tier
+    return ['tier' => 'Standard Color', 'surcharge' => 0.00];
 }
 
 $debug = ['pages' => []];
@@ -102,33 +90,41 @@ foreach ($scanData as $page) {
         $size = 'Short';
     }
 
-    // A. Strict Color Logic
-    $isColor = $colorCov > 0;
-    $basePrice = $isColor ? $priceMatrix[$size]['color'] : $priceMatrix[$size]['bw'];
+    // A. STRICT COLOR LOGIC (Using the 0.02% dark noise buffer from earlier)
+    $isColor = $colorCov > 0.02;
 
-    // B. Get Tier and Flat Surcharge Dynamically!
-    $cluster = getDynamicTierPricing($totalCoverage, $size, $isColor, $tiersMatrix);
+    $appliedSurcharge = 0.00;
+    $tierName = '';
 
-    // C. Calculate Final Retail Price (Base + Surcharge)
-    $retailPrice = $basePrice + $cluster['surcharge'];
+    // B. The Hybrid Split
+    if (!$isColor) {
+        // FIXED B&W: Ignores tiers completely
+        $basePrice = $priceMatrix[$size]['bw'];
+        $appliedSurcharge = 0.00;
+        $tierName = 'Fixed B&W';
+    } else {
+        // DYNAMIC COLOR: Evaluates against printing_tiers table
+        $basePrice = $priceMatrix[$size]['color'];
+        $tierResult = getDynamicColorTier($totalCoverage, $size, $colorTiersMatrix);
+        $appliedSurcharge = $tierResult['surcharge'];
+        $tierName = $tierResult['tier'];
+    }
 
-    // D. Safety Floor: Never let discounts push the price below the absolute minimum
-    $minimumAllowed = $isColor ? 1.00 : 0.50;
-    $retailPrice = max($minimumAllowed, $retailPrice);
+    // C. Calculate Final Retail Price
+    $retailPrice = $basePrice + $appliedSurcharge;
 
     // Accumulate total
     $grandTotalRetail += $retailPrice;
 
-    // E. Build the Debug Table Data
+    // D. Build the Debug Table Data
     $debug['pages'][] = [
         'page' => $page['page'],
         'size' => $size,
         'mode' => $isColor ? 'Color' : 'B&W',
-        'k_coverage' => number_format($kCov, 4) . '%',
-        'color_coverage' => number_format($colorCov, 4) . '%',
+        'total_coverage' => number_format($totalCoverage, 4) . '%',
         'base_price' => number_format($basePrice, 2),
-        'cluster_tier' => $cluster['tier'],
-        'surcharge' => ($cluster['surcharge'] > 0 ? '+' : '') . number_format($cluster['surcharge'], 2),
+        'cluster_tier' => $tierName,
+        'surcharge' => '+' . number_format($appliedSurcharge, 2),
         'retail_price' => number_format($retailPrice, 2)
     ];
 
@@ -139,12 +135,23 @@ foreach ($scanData as $page) {
     ];
 }
 
-// ... [FILE SYSTEM PERSISTENCE GOES HERE] ...
+// --- FILE SYSTEM PERSISTENCE ---
+$uploadDir = __DIR__ . '/../uploads/';
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0777, true);
+}
+
+$cleanFileName = preg_replace('/[^a-zA-Z0-9.-]/', '_', $_FILES['pdf_file']['name']);
+$newFileName = time() . '_' . $cleanFileName;
+$destination = $uploadDir . $newFileName;
+
+move_uploaded_file($_FILES['pdf_file']['tmp_name'], $destination);
 
 echo json_encode([
     'status' => 'success',
     'total_pages' => $totalPages,
     'total_price' => round($grandTotalRetail, 2),
+    'file_path' => 'uploads/' . $newFileName,
     'pages' => $pageBreakdown,
     'debug' => $debug
 ]);
