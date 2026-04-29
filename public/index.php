@@ -438,34 +438,41 @@ try {
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-10">
-                    <label class="cursor-pointer group">
+                    <label class="cursor-pointer group flex">
                         <input type="radio" name="delivery" value="pickup" class="hidden peer" checked>
                         <div
-                            class="p-8 border-2 border-gray-100 rounded-[2rem] text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all">
-                            <span class="block text-4xl mb-3"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                                    class="w-10 h-10 mx-auto mb-3 text-gray-700 group-hover:text-brand peer-checked:text-brand transition-colors">
+                            class="flex-1 p-6 border-2 border-gray-100 rounded-[2rem] text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all flex flex-col items-center justify-center min-h-[180px]">
+                            <div class="mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor"
+                                    class="w-10 h-10 text-gray-700 group-hover:text-brand peer-checked:text-brand transition-colors">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.809c0-.626-.31-1.227-.836-1.594l-2.18-1.516M18 21v-5.25a.75.75 0 00-.75-.75h-2.5a.75.75 0 00-.75.75V21m-4.5 0h2.25m0 0V12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12v9m15 0h2.25M3 21h2.25m12-16.5l-3-2.25a.75.75 0 00-.9 0l-3 2.25m6 0v2.25m-6-2.25v2.25" />
-                                </svg></span>
-                            <span class="block font-bold text-gray-900">Pick-up</span>
-                            <span class="block text-[10px] text-gray-400 mt-1 uppercase">At School</span>
+                                </svg>
+                            </div>
+                            <span class="block font-bold text-gray-900 text-lg">Pick-up</span>
+                            <span class="block text-[10px] text-gray-400 mt-2 uppercase tracking-wide">At my
+                                house</span>
+                            <span class="block text-[10px] text-gray-500 font-bold uppercase">(FREE)</span>
                         </div>
                     </label>
-                    <label class="cursor-pointer group">
+                    <label class="cursor-pointer group flex">
                         <input type="radio" name="delivery" value="meetup" class="hidden peer">
                         <div
-                            class="p-8 border-2 border-gray-100 rounded-[2rem] text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all">
-                            <span class="block text-4xl mb-3"><svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                                    class="w-10 h-10 mx-auto mb-3 text-gray-700 group-hover:text-brand peer-checked:text-brand transition-colors">
+                            class="flex-1 p-6 border-2 border-gray-100 rounded-[2rem] text-center group-hover:border-brand-light peer-checked:border-brand peer-checked:bg-orange-50 transition-all flex flex-col items-center justify-center min-h-[180px]">
+                            <div class="mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor"
+                                    class="w-10 h-10 text-gray-700 group-hover:text-brand peer-checked:text-brand transition-colors">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                                </svg></span>
-                            <span class="block font-bold text-gray-900">Meet-up</span>
-                            <span class="block text-[10px] text-gray-400 mt-1 uppercase">At my house</span>
+                                </svg>
+                            </div>
+                            <span class="block font-bold text-gray-900 text-lg">Meet-up</span>
+                            <span class="block text-[10px] text-gray-400 mt-2 uppercase tracking-wide">At School</span>
+                            <span class="block text-[10px] text-brand-dark font-black uppercase">(+₱20 fee)</span>
                         </div>
                     </label>
                 </div>
@@ -868,7 +875,12 @@ try {
             formData.append('paper_size', scanData.pages[0].size);
             formData.append('is_duplex', 0);
             formData.append('total_pages', scanData.document_summary.total_pages);
-            formData.append('price', scanData.document_summary.total_retail_price);
+
+            let finalPrice = scanData.document_summary.total_retail_price;
+            if (delivery === 'meetup') {
+                finalPrice += 20;
+            }
+            formData.append('price', finalPrice);
             formData.append('ink_data', JSON.stringify(scanData.pages));
 
             // New additions

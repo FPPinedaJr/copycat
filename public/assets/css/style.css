@@ -448,6 +448,9 @@
   .max-h-\[600px\] {
     max-height: 600px;
   }
+  .min-h-\[180px\] {
+    min-height: 180px;
+  }
   .min-h-\[550px\] {
     min-height: 550px;
   }
