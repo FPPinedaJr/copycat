@@ -1,7 +1,10 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
 @source "../**/*.php";
 
 @theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --color-brand-light: #fed7aa;
   --color-brand: #f97316;
   --color-brand-dark: #c2410c;

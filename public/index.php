@@ -105,46 +105,24 @@ try {
     </nav>
 
     <main class="flex-grow container mx-auto px-6 py-12">
-        <div class="flex flex-col lg:flex-row gap-12 items-center lg:items-start justify-center">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start justify-center">
 
-            <div class="w-full lg:w-2/3 text-center lg:text-left">
-                <h1 class="text-5xl md:text-6xl font-black text-gray-900 mb-6 leading-tight">
+            <!-- Hero Section (Title & Description) -->
+            <div class="lg:col-span-2 order-1 text-center lg:text-left">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 mb-6 leading-tight tracking-tight">
                     The Purr-fect Print, <br>
                     <span class="text-brand">Exactly When You Need It.</span>
                 </h1>
 
-                <p class="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl">
+                <p class="text-base sm:text-lg md:text-xl text-gray-600 md:mb-10 max-w-2xl">
                     Upload your document, get your <strong>Precision Smart-Price</strong>, and schedule your meet-up or
                     pick-up.
                     No hidden fees!
                 </p>
-
-
-                <div
-                    class="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl border border-orange-100 mx-auto lg:mx-0">
-                    <div id="dropzone"
-                        class="border-4 border-dashed border-brand-light rounded-2xl p-10 bg-orange-50/50 hover:bg-orange-50 transition duration-300 cursor-pointer flex flex-col items-center justify-center group">
-
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">Drop your PDF right meow!</h3>
-                        <p class="text-gray-500 text-sm mb-6">or click to browse your files (Max 50MB)</p>
-
-                        <label for="file-upload"
-                            class="bg-gray-900 text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:bg-gray-800 transition shadow-md">
-                            Select PDF File
-                        </label>
-                        <input id="file-upload" type="file" accept=".pdf" class="hidden" />
-                    </div>
-
-                    <div
-                        class="mt-6 flex items-center justify-center lg:justify-start gap-4 text-sm text-gray-400 font-medium">
-                        <span class="flex items-center gap-1">Secure Upload</span>
-                        <span>•</span>
-                        <span class="flex items-center gap-1">Instant Pricing</span>
-                    </div>
-                </div>
             </div>
 
-            <div class="w-full lg:w-1/3">
+            <!-- Price Guide Section (Order 2 on mobile, Merged row on desktop) -->
+            <div class="w-full lg:col-span-1 lg:row-span-2 order-2">
                 <div class="bg-white p-8 rounded-3xl shadow-xl border border-orange-100 sticky top-12">
                     <h2 class="text-2xl font-black text-gray-900 mb-2 flex items-center gap-2">
                         Smart-Price Guide
@@ -202,6 +180,32 @@ try {
                             * Black & White pages have a flat rate. Colored pages use our Smart-Pricing algorithm, so
                             pages with heavy graphics will incur surcharges above the starting price.
                         </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Section (Order 3 on mobile, Order 2 on desktop) -->
+            <div class="lg:col-span-2 order-3">
+                <div
+                    class="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl border border-orange-100 mx-auto lg:mx-0">
+                    <div id="dropzone"
+                        class="border-4 border-dashed border-brand-light rounded-2xl p-10 bg-orange-50/50 hover:bg-orange-50 transition duration-300 cursor-pointer flex flex-col items-center justify-center group">
+
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Drop your PDF right meow!</h3>
+                        <p class="text-gray-500 text-sm mb-6">or click to browse your files (Max 50MB)</p>
+
+                        <label for="file-upload"
+                            class="bg-gray-900 text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:bg-gray-800 transition shadow-md">
+                            Select PDF File
+                        </label>
+                        <input id="file-upload" type="file" accept=".pdf" class="hidden" />
+                    </div>
+
+                    <div
+                        class="mt-6 flex items-center justify-center lg:justify-start gap-4 text-sm text-gray-400 font-medium">
+                        <span class="flex items-center gap-1">Secure Upload</span>
+                        <span>•</span>
+                        <span class="flex items-center gap-1">Instant Pricing</span>
                     </div>
                 </div>
             </div>
@@ -324,7 +328,8 @@ try {
                         </div>
                     </div>
 
-                    <div class="pdf-viewer-grid custom-scrollbar grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                    <div
+                        class="pdf-viewer-grid custom-scrollbar grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
                     </div>
                 </div>
             </div>
@@ -487,7 +492,7 @@ try {
 
 
         <div id="card-success"
-            class="step-card bg-white w-full max-sm rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300 p-12 text-center">
+            class="step-card bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden hidden transform scale-95 transition-all duration-300 p-12 text-center">
             <div
                 class="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 animate-bounce">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
@@ -575,7 +580,7 @@ try {
 
         function closeModal() {
             backdrop.classList.remove('opacity-100');
-            
+
             // Close bottom sheet if open
             const sheet = document.getElementById('breakdown-sheet');
             if (!sheet.classList.contains('hidden')) {
@@ -726,7 +731,7 @@ try {
 
                 // Defaults to color, sets math, and switches view
                 setPrintMode('Color');
-                
+
                 // Reset breakdown visibility for mobile (ensure bottom sheet is closed)
                 const sheet = document.getElementById('breakdown-sheet');
                 if (!sheet.classList.contains('hidden')) {
@@ -796,7 +801,7 @@ try {
 
         function renderViewer(pagesData, thumbnails) {
             const viewers = document.querySelectorAll('.pdf-viewer-grid');
-            
+
             viewers.forEach(viewer => {
                 viewer.innerHTML = '';
 
@@ -903,7 +908,7 @@ try {
             const sheet = document.getElementById('breakdown-sheet');
             const backdrop = document.getElementById('breakdown-sheet-backdrop');
             const content = document.getElementById('breakdown-sheet-content');
-            
+
             if (sheet.classList.contains('hidden')) {
                 sheet.classList.remove('hidden');
                 setTimeout(() => {
