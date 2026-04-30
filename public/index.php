@@ -96,11 +96,10 @@ try {
             <span class="text-2xl font-black text-brand-dark tracking-tight">Copy Cat</span>
         </div>
         <div>
-            <button class="text-brand-dark font-semibold hover:text-brand transition mr-4">Log In</button>
-            <button
-                class="bg-brand text-white px-5 py-2 rounded-full font-bold shadow-sm hover:bg-brand-dark transition transform hover:-translate-y-0.5">
-                Sign In
-            </button>
+            <a href="admin.php"
+                class="bg-brand text-white px-5 py-2 rounded-full font-bold shadow-sm hover:bg-brand-dark transition transform hover:-translate-y-0.5 inline-block">
+                Admin
+            </a>
         </div>
     </nav>
 
@@ -198,7 +197,7 @@ try {
                             class="bg-gray-900 text-white px-6 py-3 rounded-full font-bold cursor-pointer hover:bg-gray-800 transition shadow-md">
                             Select PDF File
                         </label>
-                        <input id="file-upload" type="file" accept=".pdf" class="hidden" />
+                        <input id="file-upload" type="file" accept=".pdf" multiple class="hidden" />
                     </div>
 
                     <div
@@ -243,7 +242,7 @@ try {
         </div>
 
         <div id="card-result"
-            class="step-card bg-white w-full max-w-5xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden hidden transform scale-95 transition-all duration-300">
+            class="step-card bg-white w-fit rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden hidden transform scale-95 transition-all duration-300">
             <div class="h-1.5 w-full bg-gradient-to-r from-orange-400 to-orange-600"></div>
 
             <div class="flex flex-col md:flex-row min-h-[550px]">
@@ -329,7 +328,7 @@ try {
                     </div>
 
                     <div
-                        class="pdf-viewer-grid custom-scrollbar grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                        class="pdf-viewer-container custom-scrollbar h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
                     </div>
                 </div>
             </div>
@@ -534,7 +533,7 @@ try {
                     </button>
                 </div>
                 <div
-                    class="pdf-viewer-grid custom-scrollbar grid grid-cols-2 sm:grid-cols-3 gap-6 overflow-y-auto p-4 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                    class="pdf-viewer-container custom-scrollbar h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
                 </div>
             </div>
         </div>
@@ -558,14 +557,13 @@ try {
             success: document.getElementById('card-success')
         };
 
-        let scanData = null;
+        let scannedFiles = [];
         let currentPrintMode = 'Color';
 
         function openModal() {
             backdrop.classList.remove('hidden');
             document.getElementById('scan-progress').style.width = '0%';
-            document.getElementById('scan-status').textContent = 'Preparing document...';
-
+            document.getElementById('scan-status').textContent = 'Preparing documents...';
             switchStep('loading');
             setTimeout(() => { backdrop.classList.add('opacity-100'); }, 10);
         }
@@ -576,7 +574,6 @@ try {
                 card.classList.add('scale-95');
                 card.classList.remove('scale-100');
             });
-
             const activeCard = cards[stepName];
             activeCard.classList.remove('hidden');
             setTimeout(() => {
@@ -587,12 +584,8 @@ try {
 
         function closeModal() {
             backdrop.classList.remove('opacity-100');
-
-            // Close bottom sheet if open
             const sheet = document.getElementById('breakdown-sheet');
-            if (!sheet.classList.contains('hidden')) {
-                toggleBreakdown();
-            }
+            if (sheet && !sheet.classList.contains('hidden')) toggleBreakdown();
 
             Object.values(cards).forEach(card => {
                 card.classList.remove('scale-100');
@@ -602,12 +595,12 @@ try {
             setTimeout(() => {
                 backdrop.classList.add('hidden');
                 fileInput.value = '';
-                scanData = null;
+                scannedFiles = [];
             }, 300);
         }
 
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) handleUpload(e.target.files[0]);
+            if (e.target.files.length > 0) handleUpload(e.target.files);
         });
 
         ['dragenter', 'dragover'].forEach(eventName => {
@@ -622,129 +615,113 @@ try {
                 e.preventDefault();
                 dropzone.classList.remove('border-brand', 'bg-orange-100');
                 if (eventName === 'drop' && e.dataTransfer.files.length > 0) {
-                    handleUpload(e.dataTransfer.files[0]);
+                    handleUpload(e.dataTransfer.files);
                 }
             });
         });
 
-        async function handleUpload(file) {
-            if (file.type !== 'application/pdf') {
-                alert('Please upload a PDF file.');
-                return;
-            }
-
+        async function handleUpload(files) {
             openModal();
+            scannedFiles = [];
 
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let totalOverallPages = 0;
+                let pdfRefs = [];
 
-                let pagesData = [];
-                const thumbnails = [];
+                // First pass: Pre-load to get total pages for the progress bar
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].type !== 'application/pdf') continue;
+                    const arrayBuffer = await files[i].arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    pdfRefs.push({ file: files[i], pdf: pdf });
+                    totalOverallPages += pdf.numPages;
+                }
+
+                if (pdfRefs.length === 0) {
+                    alert('No valid PDF files found.');
+                    closeModal();
+                    return;
+                }
+
+                let currentPageCount = 0;
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                const totalPages = pdf.numPages;
 
-                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-                    const progress = Math.round((pageNum / totalPages) * 100);
-                    document.getElementById('scan-status').textContent = `Page ${pageNum} / ${totalPages}`;
-                    document.getElementById('scan-progress').style.width = `${progress}%`;
+                // Second pass: Render and calculate ink usage
+                for (let fileIndex = 0; fileIndex < pdfRefs.length; fileIndex++) {
+                    const { file, pdf } = pdfRefs[fileIndex];
+                    const totalPages = pdf.numPages;
+                    let pagesData = [];
+                    let thumbnails = [];
 
-                    if (pageNum % 5 === 0 || pageNum === totalPages) {
-                        await new Promise(r => setTimeout(r, 10));
-                    }
+                    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                        currentPageCount++;
+                        const progress = Math.round((currentPageCount / totalOverallPages) * 100);
+                        document.getElementById('scan-status').textContent = `Scanning Page ${currentPageCount} / ${totalOverallPages}`;
+                        document.getElementById('scan-progress').style.width = `${progress}%`;
 
-                    const page = await pdf.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 0.3 });
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
+                        if (pageNum % 5 === 0) await new Promise(r => setTimeout(r, 10));
 
-                    // Updated Dimension Algorithm
-                    const pdfWidthInches = page.view[2] / 72;
-                    const pdfHeightInches = page.view[3] / 72;
-                    const w = Math.min(pdfWidthInches, pdfHeightInches);
-                    const h = Math.max(pdfWidthInches, pdfHeightInches);
+                        const page = await pdf.getPage(pageNum);
+                        const viewport = page.getViewport({ scale: 0.3 });
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
 
-                    const supportedSizes = [
-                        { name: 'A4', w: 8.3, h: 11.7 },
-                        { name: 'Short', w: 8.5, h: 11.0 },
-                        { name: 'Legal', w: 8.5, h: 14.0 },
-                        { name: 'Executive', w: 7.25, h: 10.5 },
-                        { name: 'A5', w: 5.8, h: 8.3 },
-                        { name: 'A6', w: 4.1, h: 5.8 },
-                        { name: 'Long', w: 8.5, h: 13.0 },
-                        { name: 'Mexico Legal', w: 8.5, h: 13.38 },
-                        { name: 'India Legal', w: 8.46, h: 13.58 },
-                        { name: 'B5 (JIS)', w: 7.17, h: 10.12 },
-                        { name: 'B6 (JIS)', w: 5.04, h: 7.17 }
-                    ];
+                        const pdfWidthInches = page.view[2] / 72;
+                        const pdfHeightInches = page.view[3] / 72;
+                        const w = Math.min(pdfWidthInches, pdfHeightInches);
+                        const h = Math.max(pdfWidthInches, pdfHeightInches);
 
-                    let paperSize = 'Short';
-                    let minDistance = Infinity;
+                        const supportedSizes = [
+                            { name: 'A4', w: 8.3, h: 11.7 }, { name: 'Short', w: 8.5, h: 11.0 },
+                            { name: 'Legal', w: 8.5, h: 14.0 }, { name: 'Long', w: 8.5, h: 13.0 }
+                        ];
 
-                    for (const size of supportedSizes) {
-                        const distance = Math.sqrt(Math.pow(w - size.w, 2) + Math.pow(h - size.h, 2));
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            paperSize = size.name;
+                        let paperSize = 'Short';
+                        let minDistance = Infinity;
+                        for (const size of supportedSizes) {
+                            const distance = Math.sqrt(Math.pow(w - size.w, 2) + Math.pow(h - size.h, 2));
+                            if (distance < minDistance) { minDistance = distance; paperSize = size.name; }
                         }
-                    }
 
-                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-                    thumbnails.push(canvas.toDataURL('image/jpeg', 0.5));
+                        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                        thumbnails.push(canvas.toDataURL('image/jpeg', 0.5));
 
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                    let pixelCount = 0;
-                    let kWeightSum = 0;
-                    let colorWeightSum = 0;
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                        let pixelCount = 0, kWeightSum = 0, colorWeightSum = 0;
 
-                    for (let i = 0; i < imgData.length; i += 16) {
-                        pixelCount++;
-                        let r = imgData[i], g = imgData[i + 1], b = imgData[i + 2];
-                        if (r > 245 && g > 245 && b > 245) continue;
-
-                        if (Math.abs(r - g) < 15 && Math.abs(g - b) < 15) {
-                            kWeightSum += (255 - ((r + g + b) / 3)) / 255;
-                        } else {
-                            colorWeightSum += (255 - ((r + g + b) / 3)) / 255;
+                        for (let i = 0; i < imgData.length; i += 16) {
+                            pixelCount++;
+                            let r = imgData[i], g = imgData[i + 1], b = imgData[i + 2];
+                            if (r > 245 && g > 245 && b > 245) continue;
+                            if (Math.abs(r - g) < 15 && Math.abs(g - b) < 15) {
+                                kWeightSum += (255 - ((r + g + b) / 3)) / 255;
+                            } else {
+                                colorWeightSum += (255 - ((r + g + b) / 3)) / 255;
+                            }
                         }
+
+                        pagesData.push({
+                            page: pageNum,
+                            size: paperSize,
+                            black_pct: ((kWeightSum / pixelCount) * 100).toFixed(4),
+                            color_pct: ((colorWeightSum / pixelCount) * 100).toFixed(4),
+                            price: 0,
+                            selected: true // New property for page deselection
+                        });
                     }
 
-                    let kCov = (kWeightSum / pixelCount) * 100;
-                    let colorCov = (colorWeightSum / pixelCount) * 100;
-
-                    pagesData.push({
-                        page: pageNum,
-                        size: paperSize,
-                        black_pct: kCov.toFixed(4),
-                        color_pct: colorCov.toFixed(4),
-                        price: 0 // Will be set by recalculatePrices
+                    scannedFiles.push({
+                        raw_file: file,
+                        original_name: file.name,
+                        copies: 1, // Default copies
+                        pages: pagesData,
+                        thumbnails: thumbnails,
+                        total_price: 0
                     });
                 }
 
-                scanData = {
-                    raw_file: file,
-                    original_name: file.name,
-                    pages: pagesData,
-                    thumbnails: thumbnails,
-                    document_summary: {
-                        total_pages: totalPages,
-                        total_retail_price: 0
-                    }
-                };
-
-                document.getElementById('res-paper-size').textContent = pagesData[0].size;
-                document.getElementById('res-pages').textContent = totalPages;
-
-                // Defaults to color, sets math, and switches view
                 setPrintMode('Color');
-
-                // Reset breakdown visibility for mobile (ensure bottom sheet is closed)
-                const sheet = document.getElementById('breakdown-sheet');
-                if (!sheet.classList.contains('hidden')) {
-                    toggleBreakdown();
-                }
-
                 switchStep('result');
 
             } catch (error) {
@@ -754,94 +731,157 @@ try {
             }
         }
 
-        // Toggles Color/BW mode and re-runs math locally
         function setPrintMode(mode) {
             currentPrintMode = mode;
             const btnColor = document.getElementById('btn-mode-color');
             const btnBw = document.getElementById('btn-mode-bw');
 
             if (mode === 'Color') {
-                // Blue Active state
                 btnColor.className = 'flex-1 py-2.5 text-sm font-black bg-blue-500 text-white shadow-md rounded-lg transition-all transform scale-100 ring-2 ring-blue-500 ring-offset-1';
                 btnBw.className = 'flex-1 py-2.5 text-sm font-bold text-gray-500 bg-transparent hover:text-gray-900 transition-all rounded-lg transform scale-95 opacity-80 hover:scale-100 hover:opacity-100';
             } else {
-                // Black Active state
                 btnBw.className = 'flex-1 py-2.5 text-sm font-black bg-gray-900 text-white shadow-md rounded-lg transition-all transform scale-100 ring-2 ring-gray-900 ring-offset-1';
                 btnColor.className = 'flex-1 py-2.5 text-sm font-bold text-gray-500 bg-transparent hover:text-gray-900 transition-all rounded-lg transform scale-95 opacity-80 hover:scale-100 hover:opacity-100';
             }
             recalculatePrices();
         }
 
-        function recalculatePrices() {
-            if (!scanData) return;
-            let grandTotalRetail = 0;
-
-            scanData.pages.forEach(page => {
-                let paperSize = page.size;
-                let totalCoverage = parseFloat(page.black_pct) + parseFloat(page.color_pct);
-
-                // If B&W mode is selected, override color detection
-                let isColor = (currentPrintMode === 'Color') ? (parseFloat(page.color_pct) > 0.02) : false;
-
-                if (!priceMatrix[paperSize]) paperSize = 'Short';
-
-                let basePrice = isColor ? priceMatrix[paperSize].color : priceMatrix[paperSize].bw;
-                let surcharge = 0;
-
-                if (isColor && colorTiersMatrix[paperSize]) {
-                    for (let tier of colorTiersMatrix[paperSize]) {
-                        if (totalCoverage >= tier.min_coverage) {
-                            surcharge = tier.surcharge;
-                            break;
-                        }
-                    }
-                }
-
-                page.price = basePrice + surcharge;
-                grandTotalRetail += page.price;
-            });
-
-            scanData.document_summary.total_retail_price = grandTotalRetail;
-            document.getElementById('res-price').textContent = grandTotalRetail.toFixed(2);
-            renderViewer(scanData.pages, scanData.thumbnails);
+        function togglePageSelection(fileIndex, pageIndex) {
+            const page = scannedFiles[fileIndex].pages[pageIndex];
+            page.selected = !page.selected;
+            recalculatePrices();
         }
 
-        function renderViewer(pagesData, thumbnails) {
-            const viewers = document.querySelectorAll('.pdf-viewer-grid');
+        function updateCopies(fileIndex, value) {
+            let copies = parseInt(value);
+            if (isNaN(copies) || copies < 1) copies = 1;
+            scannedFiles[fileIndex].copies = copies;
+            recalculatePrices();
+        }
+
+        function recalculatePrices() {
+            if (scannedFiles.length === 0) return;
+
+            let grandTotalRetail = 0;
+            let totalActivePagesOverall = 0;
+            let paperSizes = new Set();
+
+            scannedFiles.forEach((file) => {
+                let fileTotal = 0;
+                let activePages = 0;
+
+                file.pages.forEach(page => {
+                    if (!page.selected) return; // Skip excluded pages
+
+                    activePages++;
+                    let paperSize = page.size;
+                    paperSizes.add(paperSize);
+                    let totalCoverage = parseFloat(page.black_pct) + parseFloat(page.color_pct);
+                    let isColor = (currentPrintMode === 'Color') ? (parseFloat(page.color_pct) > 0.02) : false;
+
+                    if (!priceMatrix[paperSize]) paperSize = 'Short';
+
+                    let basePrice = isColor ? priceMatrix[paperSize].color : priceMatrix[paperSize].bw;
+                    let surcharge = 0;
+
+                    if (isColor && colorTiersMatrix[paperSize]) {
+                        for (let tier of colorTiersMatrix[paperSize]) {
+                            if (totalCoverage >= tier.min_coverage) {
+                                surcharge = tier.surcharge;
+                                break;
+                            }
+                        }
+                    }
+
+                    page.price = basePrice + surcharge;
+                    fileTotal += page.price;
+                });
+
+                file.total_price = fileTotal * file.copies;
+                grandTotalRetail += file.total_price;
+                totalActivePagesOverall += (activePages * file.copies);
+            });
+
+            document.getElementById('res-price').textContent = grandTotalRetail.toFixed(2);
+            document.getElementById('res-pages').textContent = totalActivePagesOverall;
+
+            // Update sidebar paper size text
+            const sizeElem = document.getElementById('res-paper-size');
+            sizeElem.textContent = paperSizes.size > 1 ? 'Multiple' : (Array.from(paperSizes)[0] || 'N/A');
+
+            renderViewer();
+        }
+
+        function renderViewer() {
+            const viewers = document.querySelectorAll('.pdf-viewer-container');
 
             viewers.forEach(viewer => {
                 viewer.innerHTML = '';
 
-                for (let i = 0; i < pagesData.length; i++) {
-                    const pageInfo = pagesData[i];
-                    const pageNum = pageInfo.page;
+                scannedFiles.forEach((file, fileIndex) => {
+                    // Create Header for each file
+                    const fileHeader = document.createElement('div');
+                    fileHeader.className = 'col-span-full flex justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100';
+                    fileHeader.innerHTML = `
+                <h5 class="font-bold text-gray-800 truncate pr-4">${file.original_name}</h5>
+                <div class="flex items-center gap-3 shrink-0">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Copies</label>
+                    <input type="number" min="1" value="${file.copies}" 
+                        class="w-16 p-2 bg-gray-50 border border-gray-200 rounded-lg text-center font-bold text-gray-700 outline-none focus:border-brand transition-colors"
+                        onchange="updateCopies(${fileIndex}, this.value)">
+                </div>
+            `;
+                    viewer.appendChild(fileHeader);
 
-                    const img = document.createElement('img');
-                    img.src = thumbnails[i];
-                    img.className = 'w-full h-auto object-cover rounded shadow-sm border border-gray-200 bg-white';
+                    // Create Grid for Thumbnails
+                    const grid = document.createElement('div');
+                    grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mb-8';
 
-                    const container = document.createElement('div');
-                    container.className = 'relative flex flex-col items-center group cursor-help';
-                    container.title = `Page ${pageNum} - ${pageInfo.size}`;
+                    file.pages.forEach((pageInfo, pageIndex) => {
+                        const img = document.createElement('img');
+                        img.src = file.thumbnails[pageIndex];
 
-                    const priceBadge = document.createElement('div');
-                    priceBadge.className = 'absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 scale-90 group-hover:scale-110 transition-transform';
-                    priceBadge.textContent = '₱' + parseFloat(pageInfo.price).toFixed(2);
+                        // Styling based on selection state
+                        if (pageInfo.selected) {
+                            img.className = 'w-full h-auto object-cover rounded shadow-sm border-2 border-brand/50 hover:border-brand transition-all cursor-pointer hover:-translate-y-1';
+                        } else {
+                            img.className = 'w-full h-auto object-cover rounded border border-gray-200 opacity-40 grayscale cursor-pointer hover:opacity-70 transition-all';
+                        }
+                        img.onclick = () => togglePageSelection(fileIndex, pageIndex);
 
-                    const pageLabel = document.createElement('span');
-                    pageLabel.className = 'text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-wider';
-                    pageLabel.textContent = pageNum;
+                        const container = document.createElement('div');
+                        container.className = 'relative flex flex-col items-center group';
+                        container.title = `Click to ${pageInfo.selected ? 'exclude' : 'include'} page`;
 
-                    container.appendChild(img);
-                    container.appendChild(priceBadge);
-                    container.appendChild(pageLabel);
-                    viewer.appendChild(container);
-                }
+                        // Only show price badge if selected
+                        if (pageInfo.selected) {
+                            const priceBadge = document.createElement('div');
+                            priceBadge.className = 'absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 pointer-events-none';
+                            priceBadge.textContent = '₱' + parseFloat(pageInfo.price).toFixed(2);
+                            container.appendChild(priceBadge);
+                        } else {
+                            const excludedBadge = document.createElement('div');
+                            excludedBadge.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500/90 text-white text-xs font-bold px-3 py-1 rounded-full pointer-events-none backdrop-blur-sm shadow-sm';
+                            excludedBadge.textContent = 'EXCLUDED';
+                            container.appendChild(excludedBadge);
+                        }
+
+                        const pageLabel = document.createElement('span');
+                        pageLabel.className = `text-[10px] font-bold mt-2 uppercase tracking-wider ${pageInfo.selected ? 'text-gray-500' : 'text-gray-300 line-through'}`;
+                        pageLabel.textContent = `Page ${pageInfo.page}`;
+
+                        container.appendChild(img);
+                        container.appendChild(pageLabel);
+                        grid.appendChild(container);
+                    });
+
+                    viewer.appendChild(grid);
+                });
             });
         }
 
         async function saveOrder() {
-            if (!scanData) return;
+            if (scannedFiles.length === 0) return;
 
             const customerName = document.getElementById('inp-customer-name').value;
             if (!customerName.trim()) {
@@ -865,25 +905,34 @@ try {
             const notes = document.getElementById('inp-notes').value;
 
             let finalSchedule = null;
-            if (scheduledDate && scheduledTime) {
-                finalSchedule = `${scheduledDate} ${scheduledTime}:00`;
-            }
+            if (scheduledDate && scheduledTime) finalSchedule = `${scheduledDate} ${scheduledTime}:00`;
 
             const formData = new FormData();
-            formData.append('pdf_file', scanData.raw_file);
-            formData.append('filename', scanData.original_name);
-            formData.append('paper_size', scanData.pages[0].size);
-            formData.append('is_duplex', 0);
-            formData.append('total_pages', scanData.document_summary.total_pages);
+            let filesMeta = [];
+            let grandTotalPrice = 0;
 
-            let finalPrice = scanData.document_summary.total_retail_price;
-            if (delivery === 'meetup') {
-                finalPrice += 20;
-            }
-            formData.append('price', finalPrice);
-            formData.append('ink_data', JSON.stringify(scanData.pages));
+            scannedFiles.forEach(file => {
+                formData.append('pdf_files[]', file.raw_file);
 
-            // New additions
+                const excludedPages = file.pages.filter(p => !p.selected).map(p => p.page).join(',');
+                const activePagesCount = file.pages.filter(p => p.selected).length;
+
+                filesMeta.push({
+                    filename: file.original_name,
+                    paper_size: file.pages[0]?.size || 'Short',
+                    total_pages: activePagesCount,
+                    price: file.total_price,
+                    copies: file.copies,
+                    excluded_pages: excludedPages
+                });
+
+                grandTotalPrice += file.total_price;
+            });
+
+            if (delivery === 'meetup') grandTotalPrice += 20;
+
+            formData.append('files_meta', JSON.stringify(filesMeta));
+            formData.append('price', grandTotalPrice);
             formData.append('customer_name', customerName);
             formData.append('print_mode', currentPrintMode);
             formData.append('delivery', delivery);
