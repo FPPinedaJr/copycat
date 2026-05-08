@@ -3,7 +3,7 @@ session_start();
 require_once __DIR__ . '/includes/connect_db.php';
 
 // --- CONFIGURATION ---
-$adminPassword = 'admin123'; // Change this to your preferred password
+$adminPassword = '@ndFErn0'; // Change this to your preferred password
 
 // --- AUTHENTICATION LOGIC ---
 if (isset($_GET['logout'])) {
@@ -101,7 +101,7 @@ if ($isLoggedIn) {
     </script>
 </head>
 
-<body class="bg-slate-50 min-h-screen font-sans text-slate-800 flex flex-col">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800 flex flex-col relative">
 
     <?php if (!$isLoggedIn): ?>
         <!-- LOGIN SCREEN -->
@@ -227,7 +227,7 @@ if ($isLoggedIn) {
                 </div>
             <?php else: ?>
 
-                <!-- DESKTOP VIEW (Hidden on Mobile) -->
+                <!-- DESKTOP VIEW -->
                 <div
                     class="hidden lg:block bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
                     <div class="overflow-x-auto">
@@ -254,10 +254,10 @@ if ($isLoggedIn) {
                             <tbody class="divide-y divide-slate-50">
                                 <?php foreach ($orders as $order): ?>
                                     <tr class="hover:bg-slate-50/40 transition group">
-                                        <!-- Desktop: Order Info -->
                                         <td class="px-8 py-6 align-top">
                                             <div class="font-black text-slate-900 text-sm mb-1">
-                                                <?= htmlspecialchars($order['customer_name'] ?? 'Unknown') ?></div>
+                                                <?= htmlspecialchars($order['customer_name'] ?? 'Unknown') ?>
+                                            </div>
                                             <div class="flex items-center gap-2">
                                                 <span
                                                     class="font-bold text-slate-400 text-xs">#<?= str_pad($order['order_id'], 4, '0', STR_PAD_LEFT) ?></span>
@@ -266,8 +266,6 @@ if ($isLoggedIn) {
                                                     class="text-[10px] font-medium text-slate-500 uppercase tracking-wide"><?= date('M d, h:i A', strtotime($order['created_at'])) ?></span>
                                             </div>
                                         </td>
-
-                                        <!-- Desktop: Files List -->
                                         <td class="px-8 py-6 align-top">
                                             <div class="space-y-3">
                                                 <?php
@@ -309,21 +307,22 @@ if ($isLoggedIn) {
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <a href="<?= htmlspecialchars($file['file_path']) ?>" download
-                                                                title="Download PDF"
-                                                                class="shrink-0 w-8 h-8 flex items-center justify-center bg-slate-50 text-slate-400 rounded-lg hover:bg-slate-900 hover:text-white transition-colors">
+                                                            <!-- Print Settings Button (Download removed from here) -->
+                                                            <button
+                                                                onclick="openPrintModal('<?= htmlspecialchars($file['file_path']) ?>', '<?= $file['copies'] ?>', '<?= htmlspecialchars($file['paper_size']) ?>', '<?= htmlspecialchars($file['excluded_pages']) ?>', <?= (int) $file['total_pages'] ?>)"
+                                                                title="Open Print Settings"
+                                                                class="shrink-0 px-3 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors shadow-sm">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                                    stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                                                                    stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
                                                                     <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                                                        d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0v-2.94a2.25 2.25 0 0 1 2.25-2.25h6a2.25 2.25 0 0 1 2.25 2.25v2.94Z" />
                                                                 </svg>
-                                                            </a>
+                                                                Print
+                                                            </button>
                                                         </div>
                                                     <?php endforeach; endif; ?>
                                             </div>
                                         </td>
-
-                                        <!-- Desktop: Schedule & Details -->
                                         <td class="px-8 py-6 align-top">
                                             <div class="text-sm font-bold text-slate-700 mb-1">
                                                 <?= $order['scheduled_time'] ? date('M d, h:i A', strtotime($order['scheduled_time'])) : 'ASAP' ?>
@@ -332,35 +331,19 @@ if ($isLoggedIn) {
                                                 <?= htmlspecialchars($order['notes']) ?: 'No special instructions' ?>
                                             </div>
                                         </td>
-
-                                        <!-- Desktop: Fulfillment -->
                                         <td class="px-8 py-6 align-top">
                                             <?php if ($order['fulfillment_type'] === 'Pick Up'): ?>
                                                 <span
                                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/50">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                        stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.809c0-.626-.31-1.227-.836-1.594l-2.18-1.516M18 21v-5.25a.75.75 0 00-.75-.75h-2.5a.75.75 0 00-.75.75V21m-4.5 0h2.25m0 0V12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12v9m15 0h2.25M3 21h2.25m12-16.5l-3-2.25a.75.75 0 00-.9 0l-3 2.25m6 0v2.25m-6-2.25v2.25" />
-                                                    </svg>
                                                     Pick-Up
                                                 </span>
                                             <?php else: ?>
                                                 <span
                                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-purple-50 text-purple-600 border border-purple-100/50">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                        stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                                                    </svg>
                                                     Meet-Up
                                                 </span>
                                             <?php endif; ?>
                                         </td>
-
-                                        <!-- Desktop: Status & Price -->
                                         <td class="px-8 py-6 align-top text-right">
                                             <div class="text-base font-black text-slate-900 mb-2">
                                                 ₱<?= number_format($order['total_price'], 2) ?></div>
@@ -383,16 +366,16 @@ if ($isLoggedIn) {
                     </div>
                 </div>
 
-                <!-- MOBILE VIEW (Hidden on Desktop) -->
+                <!-- MOBILE VIEW -->
                 <div class="block lg:hidden space-y-4">
                     <?php foreach ($orders as $order): ?>
                         <div
                             class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4 relative overflow-hidden">
-                            <!-- Mobile: Header (Customer, ID, Date, Price, Status) -->
                             <div class="flex justify-between items-start border-b border-slate-100 pb-4">
                                 <div>
                                     <div class="font-black text-slate-900 text-base mb-1 truncate max-w-[160px]">
-                                        <?= htmlspecialchars($order['customer_name'] ?? 'Unknown') ?></div>
+                                        <?= htmlspecialchars($order['customer_name'] ?? 'Unknown') ?>
+                                    </div>
                                     <div class="flex items-center gap-1.5 text-xs">
                                         <span
                                             class="font-bold text-slate-400">#<?= str_pad($order['order_id'], 4, '0', STR_PAD_LEFT) ?></span>
@@ -417,8 +400,6 @@ if ($isLoggedIn) {
                                     </span>
                                 </div>
                             </div>
-
-                            <!-- Mobile: Files List -->
                             <div class="space-y-2">
                                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Files</span>
                                 <?php
@@ -447,19 +428,20 @@ if ($isLoggedIn) {
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
-                                            <a href="<?= htmlspecialchars($file['file_path']) ?>" download title="Download PDF"
-                                                class="shrink-0 w-8 h-8 flex items-center justify-center bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-colors">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                            <!-- Print Settings Button -->
+                                            <button
+                                                onclick="openPrintModal('<?= htmlspecialchars($file['file_path']) ?>', '<?= $file['copies'] ?>', '<?= htmlspecialchars($file['paper_size']) ?>', '<?= htmlspecialchars($file['excluded_pages']) ?>', <?= (int) $file['total_pages'] ?>)"
+                                                title="Open Print Settings"
+                                                class="shrink-0 w-8 h-8 flex items-center justify-center bg-slate-900 text-white rounded-lg shadow-sm hover:bg-slate-800 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                                                     stroke="currentColor" class="w-4 h-4">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                                        d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0v-2.94a2.25 2.25 0 0 1 2.25-2.25h6a2.25 2.25 0 0 1 2.25 2.25v2.94Z" />
                                                 </svg>
-                                            </a>
+                                            </button>
                                         </div>
                                     <?php endforeach; endif; ?>
                             </div>
-
-                            <!-- Mobile: Schedule & Fulfillment -->
                             <div class="grid grid-cols-2 gap-4 pt-2">
                                 <div>
                                     <span
@@ -467,35 +449,201 @@ if ($isLoggedIn) {
                                     <div class="text-xs font-bold text-slate-700">
                                         <?= $order['scheduled_time'] ? date('M d, h:i A', strtotime($order['scheduled_time'])) : 'ASAP' ?>
                                     </div>
-                                    <?php if ($order['notes']): ?>
-                                        <div class="text-[10px] text-slate-500 italic truncate mt-0.5"
-                                            title="<?= htmlspecialchars($order['notes']) ?>">
-                                            <?= htmlspecialchars($order['notes']) ?>
-                                        </div>
-                                    <?php endif; ?>
                                 </div>
                                 <div class="text-right">
                                     <span
                                         class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fulfillment</span>
-                                    <?php if ($order['fulfillment_type'] === 'Pick Up'): ?>
-                                        <span
-                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100/50">
-                                            Pick-Up
-                                        </span>
-                                    <?php else: ?>
-                                        <span
-                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-purple-50 text-purple-600 border border-purple-100/50">
-                                            Meet-Up
-                                        </span>
-                                    <?php endif; ?>
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-600">
+                                        <?= $order['fulfillment_type'] ?>
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
-
             <?php endif; ?>
         </main>
+
+        <!-- PRINT DETAILS MODAL -->
+        <div id="printModal"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity">
+            <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full mx-4 shadow-2xl border border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xl font-black text-slate-900 tracking-tight">Print Settings</h3>
+                    <div class="w-10 h-10 bg-brand/10 rounded-full flex items-center justify-center text-brand">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0v-2.94a2.25 2.25 0 0 1 2.25-2.25h6a2.25 2.25 0 0 1 2.25 2.25v2.94Z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 mb-6 font-medium">Verify and apply these settings in your print dialog.</p>
+
+                <div class="space-y-3 mb-8">
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Copies Needed</span>
+                        <span class="text-lg font-black text-brand" id="modalCopies"></span>
+                    </div>
+
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paper Size</span>
+                        <span class="text-sm font-bold text-slate-800" id="modalPaperSize"></span>
+                    </div>
+
+                    <!-- Calculated Pages to Print -->
+                    <div id="modalPagesToPrintContainer"
+                        class="p-3.5 bg-emerald-50 border border-emerald-100 rounded-xl hidden flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Pages to
+                                Print</span>
+                        </div>
+                        <div class="flex gap-2 relative">
+                            <input type="text" id="modalPagesToPrint" readonly
+                                class="w-full bg-white border border-emerald-200 rounded-lg pl-3 pr-10 py-2.5 text-sm font-black text-emerald-700 outline-none selection:bg-emerald-200">
+
+                            <button onclick="copyPagesToPrint()" id="copyBtn"
+                                class="absolute right-1.5 top-1.5 bottom-1.5 px-2.5 bg-emerald-100 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-md transition-colors flex items-center justify-center"
+                                title="Copy to clipboard">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"
+                                    stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="closePrintModal()"
+                        class="w-1/4 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-200 transition">Cancel</button>
+                    <!-- Download Button Moved Here -->
+                    <a id="modalDownloadBtn" href="#" download
+                        class="w-1/4 py-3 flex items-center justify-center bg-brand/10 text-brand border border-brand/20 rounded-xl font-bold text-sm hover:bg-brand hover:text-white transition">DL</a>
+                    <button id="proceedPrintBtn"
+                        class="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-sm hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 active:scale-95 transform">Open
+                        Printer</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let currentPrintUrl = '';
+
+            // Helper function: Converts "total pages" and "excluded string" into an "included string"
+            function calculatePagesToPrint(totalPages, excludedStr) {
+                if (!excludedStr || excludedStr.trim() === '') return '';
+
+                let excluded = new Set();
+                let parts = excludedStr.split(',');
+
+                parts.forEach(part => {
+                    part = part.trim();
+                    if (part.includes('-')) {
+                        let [start, end] = part.split('-').map(Number);
+                        for (let i = start; i <= end; i++) excluded.add(i);
+                    } else {
+                        excluded.add(Number(part));
+                    }
+                });
+
+                let included = [];
+                for (let i = 1; i <= totalPages; i++) {
+                    if (!excluded.has(i)) included.push(i);
+                }
+
+                if (included.length === 0) return 'None';
+
+                // Compact into ranges (e.g. 1, 2, 3, 5 -> "1-3, 5")
+                let ranges = [];
+                let start = included[0];
+                let prev = start;
+
+                for (let i = 1; i < included.length; i++) {
+                    if (included[i] === prev + 1) {
+                        prev = included[i];
+                    } else {
+                        ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+                        start = included[i];
+                        prev = start;
+                    }
+                }
+                ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+
+                return ranges.join(', ');
+            }
+
+            function openPrintModal(fileUrl, copies, paperSize, excludedPages, totalPages) {
+                currentPrintUrl = fileUrl;
+
+                document.getElementById('modalCopies').textContent = copies + 'x';
+                document.getElementById('modalPaperSize').textContent = paperSize;
+                document.getElementById('modalDownloadBtn').href = fileUrl;
+
+                const printPagesContainer = document.getElementById('modalPagesToPrintContainer');
+                const printPagesInput = document.getElementById('modalPagesToPrint');
+
+                if (excludedPages && excludedPages.trim() !== '') {
+                    printPagesContainer.classList.remove('hidden');
+                    printPagesContainer.classList.add('flex');
+
+                    // Calculate the inverse pages
+                    printPagesInput.value = calculatePagesToPrint(totalPages, excludedPages);
+
+                    // Reset copy button visual state
+                    const copyBtn = document.getElementById('copyBtn');
+                    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>`;
+                    copyBtn.classList.replace('bg-brand', 'hover:bg-emerald-500');
+                    copyBtn.classList.replace('text-white', 'text-emerald-600');
+                } else {
+                    printPagesContainer.classList.add('hidden');
+                    printPagesContainer.classList.remove('flex');
+                }
+
+                const modal = document.getElementById('printModal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closePrintModal() {
+                const modal = document.getElementById('printModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            function copyPagesToPrint() {
+                const input = document.getElementById('modalPagesToPrint');
+                input.select();
+                input.setSelectionRange(0, 99999);
+
+                navigator.clipboard.writeText(input.value).then(() => {
+                    const copyBtn = document.getElementById('copyBtn');
+                    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>`;
+                    copyBtn.classList.replace('hover:bg-emerald-500', 'bg-brand');
+                    copyBtn.classList.replace('text-emerald-600', 'text-white');
+                    copyBtn.classList.replace('hover:text-white', 'text-white');
+                });
+            }
+
+            document.getElementById('proceedPrintBtn').addEventListener('click', function () {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = currentPrintUrl;
+                document.body.appendChild(iframe);
+
+                iframe.onload = function () {
+                    setTimeout(() => {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                        setTimeout(() => { document.body.removeChild(iframe); }, 60000);
+                    }, 500);
+                };
+
+                closePrintModal();
+            });
+        </script>
     <?php endif; ?>
 
 </body>

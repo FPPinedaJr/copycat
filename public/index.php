@@ -242,7 +242,7 @@ try {
         </div>
 
         <div id="card-result"
-            class="step-card bg-white w-fit rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden hidden transform scale-95 transition-all duration-300">
+            class="step-card bg-white w-full max-w-5xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden hidden transform scale-95 transition-all duration-300">
             <div class="h-1.5 w-full bg-gradient-to-r from-orange-400 to-orange-600"></div>
 
             <div class="flex flex-col md:flex-row min-h-[550px]">
