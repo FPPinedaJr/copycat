@@ -308,8 +308,12 @@ if ($isLoggedIn) {
                                                                 </div>
                                                             </div>
                                                             <!-- Print Settings Button (Download removed from here) -->
+                                                            <?php
+                                                                $excludedCount = empty($file['excluded_pages']) ? 0 : count(explode(',', $file['excluded_pages']));
+                                                                $originalTotalPages = (int)$file['total_pages'] + $excludedCount;
+                                                            ?>
                                                             <button
-                                                                onclick="openPrintModal('<?= htmlspecialchars($file['file_path']) ?>', '<?= $file['copies'] ?>', '<?= htmlspecialchars($file['paper_size']) ?>', '<?= htmlspecialchars($file['excluded_pages']) ?>', <?= (int) $file['total_pages'] ?>)"
+                                                                onclick="openPrintModal('<?= htmlspecialchars($file['file_path']) ?>', '<?= $file['copies'] ?>', '<?= htmlspecialchars($file['paper_size']) ?>', '<?= htmlspecialchars($file['excluded_pages']) ?>', <?= $originalTotalPages ?>)"
                                                                 title="Open Print Settings"
                                                                 class="shrink-0 px-3 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors shadow-sm">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -429,8 +433,12 @@ if ($isLoggedIn) {
                                                 </div>
                                             </div>
                                             <!-- Print Settings Button -->
+                                            <?php
+                                                $excludedCount = empty($file['excluded_pages']) ? 0 : count(explode(',', $file['excluded_pages']));
+                                                $originalTotalPages = (int)$file['total_pages'] + $excludedCount;
+                                            ?>
                                             <button
-                                                onclick="openPrintModal('<?= htmlspecialchars($file['file_path']) ?>', '<?= $file['copies'] ?>', '<?= htmlspecialchars($file['paper_size']) ?>', '<?= htmlspecialchars($file['excluded_pages']) ?>', <?= (int) $file['total_pages'] ?>)"
+                                                onclick="openPrintModal('<?= htmlspecialchars($file['file_path']) ?>', '<?= $file['copies'] ?>', '<?= htmlspecialchars($file['paper_size']) ?>', '<?= htmlspecialchars($file['excluded_pages']) ?>', <?= $originalTotalPages ?>)"
                                                 title="Open Print Settings"
                                                 class="shrink-0 w-8 h-8 flex items-center justify-center bg-slate-900 text-white rounded-lg shadow-sm hover:bg-slate-800 transition-colors">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"

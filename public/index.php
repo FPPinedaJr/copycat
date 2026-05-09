@@ -242,13 +242,13 @@ try {
         </div>
 
         <div id="card-result"
-            class="step-card bg-white w-full max-w-5xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden hidden transform scale-95 transition-all duration-300">
+            class="step-card bg-white w-full max-w-7xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden hidden transform scale-95 transition-all duration-300">
             <div class="h-1.5 w-full bg-gradient-to-r from-orange-400 to-orange-600"></div>
 
             <div class="flex flex-col md:flex-row min-h-[550px]">
 
                 <div
-                    class="w-full md:w-[360px] p-8 lg:p-10 border-r border-gray-100 flex flex-col justify-between bg-slate-50/50">
+                    class="w-full md:w-[360px] p-8 lg:p-10 border-r border-gray-100 flex flex-col justify-between bg-white">
                     <div>
                         <div class="mb-8">
                             <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">Smart-Price</h3>
@@ -317,7 +317,7 @@ try {
                     </div>
                 </div>
 
-                <div id="breakdown-section" class="flex-grow p-8 lg:p-10 bg-white flex flex-col hidden md:flex">
+                <div id="breakdown-section" class="flex-grow p-8 lg:p-10 bg-slate-50/50 flex flex-col hidden md:flex">
                     <div class="flex items-center justify-between mb-6">
                         <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Page Breakdown</h4>
                         <div
@@ -328,7 +328,7 @@ try {
                     </div>
 
                     <div
-                        class="pdf-viewer-container custom-scrollbar h-full max-h-[600px] overflow-y-auto p-6 bg-slate-50/80 rounded-3xl border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                        class="pdf-viewer-container custom-scrollbar h-full max-h-[600px] overflow-y-auto p-6 bg-white rounded-3xl border border-gray-100 shadow-sm">
                     </div>
                 </div>
             </div>
@@ -821,7 +821,7 @@ try {
                 scannedFiles.forEach((file, fileIndex) => {
                     // Create Header for each file
                     const fileHeader = document.createElement('div');
-                    fileHeader.className = 'col-span-full flex justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100';
+                    fileHeader.className = 'col-span-full flex justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 w-full';
                     fileHeader.innerHTML = `
                 <h5 class="font-bold text-gray-800 truncate pr-4">${file.original_name}</h5>
                 <div class="flex items-center gap-3 shrink-0">
@@ -835,28 +835,30 @@ try {
 
                     // Create Grid for Thumbnails
                     const grid = document.createElement('div');
-                    grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mb-8';
+                    // Added w-full and px-1 to ensure it fits safely inside the scroll container
+                    grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 mb-8 w-full px-1';
 
                     file.pages.forEach((pageInfo, pageIndex) => {
                         const img = document.createElement('img');
                         img.src = file.thumbnails[pageIndex];
 
-                        // Styling based on selection state
+                        // FIX 1: Added 'object-top' to anchor landscape pages to the top of their box instead of the center
                         if (pageInfo.selected) {
-                            img.className = 'w-full h-auto object-cover rounded shadow-sm border-2 border-brand/50 hover:border-brand transition-all cursor-pointer hover:-translate-y-1';
+                            img.className = 'w-full aspect-[8.5/11] object-contain object-top bg-white p-1 rounded shadow-sm border-2 border-brand/50 hover:border-brand transition-all cursor-pointer hover:-translate-y-1';
                         } else {
-                            img.className = 'w-full h-auto object-cover rounded border border-gray-200 opacity-40 grayscale cursor-pointer hover:opacity-70 transition-all';
+                            img.className = 'w-full aspect-[8.5/11] object-contain object-top bg-white p-1 rounded border border-gray-200 opacity-40 grayscale cursor-pointer hover:opacity-70 transition-all';
                         }
                         img.onclick = () => togglePageSelection(fileIndex, pageIndex);
 
                         const container = document.createElement('div');
-                        container.className = 'relative flex flex-col items-center group';
+                        // FIX 2: Restored to natural flow (removed h-full and justify-end)
+                        container.className = 'relative flex flex-col items-center group w-full';
                         container.title = `Click to ${pageInfo.selected ? 'exclude' : 'include'} page`;
 
-                        // Only show price badge if selected
                         if (pageInfo.selected) {
                             const priceBadge = document.createElement('div');
-                            priceBadge.className = 'absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 pointer-events-none';
+                            // FIX 3: Changed '-right-2' to 'right-0' so the badge doesn't bleed out and get cut off on the rightmost column
+                            priceBadge.className = 'absolute -top-2 right-0 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md z-10 pointer-events-none';
                             priceBadge.textContent = '₱' + parseFloat(pageInfo.price).toFixed(2);
                             container.appendChild(priceBadge);
                         } else {
